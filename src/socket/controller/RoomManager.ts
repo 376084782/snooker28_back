@@ -12,7 +12,7 @@ export default class RoomManager {
   isPublic = true;
   // 0匹配阶段 1开始游戏
   step = 0;
-  game = {
+  game: any = {
     count: 0,
     ballLeft: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     deskList: [],
@@ -145,8 +145,15 @@ export default class RoomManager {
   }
   checkCanStart() {
     // 如果都准备了 开始游戏
-    if (!this.userList.find(e => !e.ready) && this.userList.length >= 2) {
-      this.doStartGame()
+    if (!this.userList.find(e => !e.ready) && this.userList.length >= 2 && this.step == 0) {
+      this.step = 2;
+      this.game.timeStart = new Date().getTime() + 5000
+      socketManager.sendMsgByUidList(this.uidList, 'BEFORE_START', {
+        timeStart: this.game.timeStart
+      });
+      setTimeout(() => {
+        this.doStartGame()
+      }, 5000);
     }
   }
   resetGameInfo() {
