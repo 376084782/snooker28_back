@@ -67,12 +67,12 @@ async function initRoomConfig() {
 
 async function initUser() {
   const listUser = [
-    { coin: 10000000, gainTotal: 100000, uid: 111, nickname: '钱最多', avatar: 'https://img0.baidu.com/it/u=16966295,3736937037&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
-    { coin: 10000000, gainTotal: 5000, uid: 112, nickname: '钱很少', avatar: 'https://img2.baidu.com/it/u=2078308964,2142755897&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
-    { coin: 10000000, gainTotal: 50000, uid: 113, nickname: '钱很多', avatar: 'https://img2.baidu.com/it/u=2391726625,2951775714&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
-    { coin: 10000000, gainTotal: -1000, uid: 114, nickname: '输一点', avatar: 'https://img0.baidu.com/it/u=164232245,2005229505&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
-    { coin: 10000000, gainTotal: -50000, uid: 115, nickname: '输很多', avatar: 'https://img2.baidu.com/it/u=2464854331,2113352486&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
-    { coin: 10000000, gainTotal: -100000, uid: 116, nickname: '输狂多', avatar: 'https://img2.baidu.com/it/u=80344671,2129607677&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
+    { tagCheat: true, coin: 50000, uid: 111, nickname: '钱最多', avatar: 'https://img0.baidu.com/it/u=16966295,3736937037&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
+    { tagCheat: false, coin: 10000000, uid: 112, nickname: '钱很少', avatar: 'https://img2.baidu.com/it/u=2078308964,2142755897&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
+    { tagCheat: false, coin: 10000000, uid: 113, nickname: '钱很多', avatar: 'https://img2.baidu.com/it/u=2391726625,2951775714&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
+    { tagCheat: false, coin: 10000000, uid: 114, nickname: '输一点', avatar: 'https://img0.baidu.com/it/u=164232245,2005229505&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
+    { tagCheat: false, coin: 10000000, uid: 115, nickname: '输很多', avatar: 'https://img2.baidu.com/it/u=2464854331,2113352486&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
+    { tagCheat: false, coin: 10000000, uid: 116, nickname: '输狂多', avatar: 'https://img2.baidu.com/it/u=80344671,2129607677&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
   ];
   await ModelUser.deleteMany();
   ModelUser.create(listUser)

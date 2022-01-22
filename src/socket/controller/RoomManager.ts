@@ -172,7 +172,9 @@ export default class RoomManager {
       user.ballList = []
       user.ready = false;
       user.isLose = false;
-      this.addTimerToLeave(user.uid)
+      setTimeout(() => {
+        this.addTimerToLeave(user.uid)
+      }, 7000);
     })
   }
   config: any;
@@ -180,14 +182,12 @@ export default class RoomManager {
     // 重置游戏数据
     this.step = 1;
     // 分发私有球
-    for (let i = 1; i < 4; i++) {
+    for (let i = 1; i < this.userList.length + 1; i++) {
       let userInfo = this.userList.find(e => e.seat == i)
-      if (userInfo) {
-        if (!userInfo.ballList) {
-          userInfo.ballList = []
-        }
-        userInfo.ballList.push(Util.getRandomInt(1, 15));
+      if (!userInfo.ballList) {
+        userInfo.ballList = []
       }
+      userInfo.ballList.push(Util.getRandomInt(1, 15));
     }
     this.game.chip = this.config.basicChip;
     // 随机开始座位
@@ -198,6 +198,7 @@ export default class RoomManager {
         chip: this.config.basicChip,
         dataGame: this.getRoomInfo()
       });
+    this.game.count += this.userList.length;
     setTimeout(() => {
       // 扣除底注
       for (let i = 0; i < this.userList.length; i++) {
@@ -221,6 +222,7 @@ export default class RoomManager {
   flagCanDoAction = true;
   async doAction(uid, type, data?) {
     let user = this.getUserById(uid);
+    let userInDB = await ModelUser.findOne({ uid });
     if (user.seat != this.game.currentSeat || !this.flagCanDoAction) {
       return
     }
@@ -228,6 +230,9 @@ export default class RoomManager {
 
     user.lastAction = type;
     if (type == 1) {
+      if (data.chip >= user.coin) {
+        return
+      }
       // 加注
       this.game.chip = data.chip;
       this.throwMoney(uid, data.chip);
@@ -237,8 +242,21 @@ export default class RoomManager {
       }
       // 要球
       let ballIdx = Util.getRandomInt(0, this.game.ballLeft.length)
+
+      if (userInDB.tagCheat) {
+        let p = Math.random() < .7;
+        if (p) {
+          // 高概率使现在的球相加=25至28
+          for (let i = 0; i < this.game.ballLeft.length; i++) {
+            let nn = this.game.ballLeft[i]
+            let ss = Util.sum(user.ballList) + nn
+            if (ss <= 28 && ss >= 25) {
+              ballIdx = i
+            }
+          }
+        }
+      }
       let ball = this.game.ballLeft.splice(ballIdx, 1)[0];
-      let user = this.getUserById(uid);
       user.ballList.push(ball);
       socketManager.sendMsgByUidList(
         this.uidList,
@@ -368,8 +386,13 @@ export default class RoomManager {
     }
     return isFinish
   }
-  throwMoney(uid, num) {
-    this.changeMoney(uid, -num)
+  async throwMoney(uid, num) {
+    let dataUser = await ModelUser.findOne({ uid });
+    if (dataUser.coin <= num) {
+      this.changeMoney(uid, -dataUser.coin)
+    } else {
+      this.changeMoney(uid, -num)
+    }
     this.game.deskList.push(num);
     socketManager.sendMsgByUidList(
       this.uidList,
