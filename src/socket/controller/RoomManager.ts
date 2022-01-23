@@ -323,7 +323,7 @@ export default class RoomManager {
   checkFinish() {
     let isFinish = false;
     // 15轮结束
-    let roundFinish = this.game.count >= 15 * 3;
+    let roundFinish = this.game.count >= 14 * this.userList.length;
     let allGiveup = this.userList.filter(e => !e.isLose).length <= 1;
     // 三人爆点
     let allBoom = this.userList.filter(e => this.getSumExpFirst(e.ballList) <= 28).length <= 1;
@@ -388,6 +388,9 @@ export default class RoomManager {
   }
   async throwMoney(uid, num) {
     let dataUser = await ModelUser.findOne({ uid });
+    if (dataUser.coin == 0) {
+      return
+    }
     if (dataUser.coin <= num) {
       this.changeMoney(uid, -dataUser.coin)
     } else {
