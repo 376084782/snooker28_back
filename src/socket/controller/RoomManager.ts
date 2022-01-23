@@ -120,6 +120,7 @@ export default class RoomManager {
     return this.userList.find(e => e.uid == uid)
   }
   addTimerToLeave(uid) {
+    return
     this.timerJoin[uid] = setTimeout(() => {
       // 十秒内不准备，踢出房间
       this.leave(uid);
