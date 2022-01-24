@@ -20,6 +20,7 @@ export default class RoomManager {
     chip: 20000,
     timeEnd: 0
   }
+  roundAllIn = {}
   maxRound = 15;
 
   // 存当前在游戏中的uid列表
@@ -162,6 +163,7 @@ export default class RoomManager {
     clearTimeout(this.timerNext)
     this.flagCanDoAction = false;
     this.step = 0;
+    this.roundAllIn = {}
     this.game = {
       count: 0,
       ballLeft: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -174,6 +176,7 @@ export default class RoomManager {
       user.ballList = []
       user.ready = false;
       user.isLose = false;
+      user.deskList = []
       setTimeout(() => {
         this.addTimerToLeave(user.uid)
       }, 7000);
@@ -328,69 +331,117 @@ export default class RoomManager {
       });
   }
   timerNext = null;
+  sort(list) {
+    return list.sort((a, b) => {
+      let totalA = Util.sum(a.ballList);
+      let totalB = Util.sum(b.ballList);
+      if (totalA > 28) {
+        if (totalB <= 28) {
+          return 1
+        } else {
+          if (b.ballList.length > a.ballList.length) {
+            return 1
+          } else if (b.ballList.length == a.ballList.length) {
+            return b.ballList[0] > a.ballList[0] ? 1 : -1
+          } else {
+            return -1
+          }
+        }
+      } else {
+        if (totalB <= 28) {
+          if (totalB > totalA) {
+            return 1
+          } else if (totalB == totalA) {
+            if (b.ballList.length > a.ballList.length) {
+              return 1
+            } else if (b.ballList.length == a.ballList.length) {
+              return b.ballList[0] > a.ballList[0] ? 1 : -1
+            }
+          } else {
+            return -1
+          }
+        } else {
+          return -1
+        }
+      }
+
+    })
+  }
   checkFinish() {
     let isFinish = false;
     // 15轮结束
     let roundFinish = this.game.count >= 14 * this.userList.length;
     let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) <= 28).length <= 1;
     isFinish = roundFinish || isLose;
-    let winner = { total: 0, balls: [], uid: 0, gain: 0 };
-    this.userList
-      .filter(e => !e.isLose)
-      .forEach(user => {
-        console.log(user, 'uuuu', winner)
-        let total = Util.sum(user.ballList);
-        let flag = false
-        let isLonger = user.ballList.length > winner.balls.length;
-        if (winner.balls.length == 0) {
-          flag = true;
-        } else if (winner.total > 28) {
-          if (total <= 28) {
-            flag = true
+    if (!isFinish) {
+      return false
+    }
+
+
+    let listSort = this.sort(this.userList)
+    let winnerUser = listSort[0]
+    let winner = {
+      total: Util.sum(winnerUser.ballList),
+      balls: winnerUser.ballList,
+      uid: winnerUser.uid,
+      mapGain: {}
+    }
+
+    if (this.roundAllIn[winner.uid]) {
+      // 赢家allin 剩余两家大的拿剩下的钱
+      let max1 = Util.sum(winnerUser.deskList) * 2;
+      let chipTotalInDesk = Util.sum(this.game.deskList)
+      let chipLeft = chipTotalInDesk - max1
+      console.log("max1", max1)
+      console.log('chipLeft：', chipLeft)
+      if (chipLeft > 0) {
+        // 先给赢家最大金额
+        winner.mapGain[winner.uid] = max1;
+        // 多出来的钱继续pk
+        let uu2 = listSort[1];
+        if (this.roundAllIn[uu2.uid]) {
+          // 这个人也allin了
+          let max2 = Util.sum(uu2.deskList) * 2;
+          let chipLeftFinal = chipLeft - max2;
+          console.log("max2", max2)
+          console.log('chipLeftFinal', chipLeftFinal)
+          if (chipLeftFinal > 0) {
+            let uu3 = listSort[2];
+            // 超出了，给他一部分
+            winner.mapGain[uu2.uid] = max2;
+            winner.mapGain[uu3.uid] = chipLeftFinal;
           } else {
-            flag = isLonger
+            // 没超出，全给第二个人
+            winner.mapGain[uu2.uid] = chipLeft;
           }
         } else {
-          if (total <= 28) {
-            if (total > winner.total) {
-              flag = true;
-            } else if (total == winner.total) {
-              if (user.ballList.length > winner.balls.length) {
-                flag = true
-              } else if (user.ballList.length == winner.balls.length) {
-                let list1 = [].concat(winner.balls);
-                list1.shift()
-                let list2 = [].concat(user.ballList);
-                list2.shift()
-                let max1 = Math.max(...list1);
-                let max2 = Math.max(...list2);
-                flag = max2 > max1
-              }
-            }
-          }
+          // 这个人正常玩了一把,拿了第二名
+          // 剩下的钱给他
+          winner.mapGain[uu2.uid] = chipLeft;
         }
-        if (flag) {
-          winner = {
-            total,
-            balls: user.ballList,
-            uid: user.uid,
-            gain: 0
-          }
-        }
-      })
-    winner.gain = Util.sum(this.game.deskList);
-    if (isFinish) {
-      this.resetGameInfo()
-      this.changeMoney(winner.uid, winner.gain)
-      socketManager.sendMsgByUidList(
-        this.uidList,
-        'FINISH',
-        {
-          winner,
-          dataGame: this.getRoomInfo()
-        });
+      } else {
+        // 没超出最大限额，直接给他钱
+        winner.mapGain[winner.uid] = chipTotalInDesk;
+
+      }
+
+
+    } else {
+      winner.mapGain[winner.uid] = Util.sum(this.game.deskList)
     }
-    return isFinish
+    this.resetGameInfo()
+    for (let uu in winner.mapGain) {
+      this.changeMoney(uu, winner.mapGain[uu])
+    }
+    socketManager.sendMsgByUidList(
+      this.uidList,
+      'FINISH',
+      {
+        winner,
+        dataGame: this.getRoomInfo()
+      });
+
+    return true
   }
   async throwMoney(uid, num) {
     let dataUser = await ModelUser.findOne({ uid });
@@ -399,9 +450,15 @@ export default class RoomManager {
     }
     if (dataUser.coin <= num) {
       this.changeMoney(uid, -dataUser.coin)
+      this.roundAllIn[uid] = Math.floor(this.game.count / this.userList.length)
     } else {
       this.changeMoney(uid, -num)
     }
+    let uu = this.getUserById(uid);
+    if (!uu.deskList) {
+      uu.deskList = []
+    }
+    uu.deskList.push(num)
     this.game.deskList.push(num);
     socketManager.sendMsgByUidList(
       this.uidList,
