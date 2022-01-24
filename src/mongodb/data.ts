@@ -79,7 +79,7 @@ async function initUser() {
 }
 
 const createData = async () => {
-  // await initRoomConfig();
+  await initRoomConfig();
   await initUser()
 }
 export { createData }
