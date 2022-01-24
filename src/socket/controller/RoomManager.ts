@@ -67,6 +67,7 @@ export default class RoomManager {
   timerJoin = {};
   // 玩家加入
   async join(userInfo) {
+    await this.initConfig()
     let dataUser = await ModelUser.findOne({ uid: userInfo.uid });
     if (dataUser.coin > this.config.max) {
       socketManager.sendErrByUidList([userInfo.uid], "match", {
@@ -191,6 +192,12 @@ export default class RoomManager {
       userInfo.ballList.push(Util.getRandomInt(1, 15));
     }
     this.game.chip = this.config.basicChip;
+
+
+    for (let i = 0; i < this.userList.length; i++) {
+      let user = this.userList[i];
+      this.changeMoney(user.uid, -this.config.teaMoney)
+    }
     // 随机开始座位
     socketManager.sendMsgByUidList(
       this.uidList,
@@ -325,10 +332,8 @@ export default class RoomManager {
     let isFinish = false;
     // 15轮结束
     let roundFinish = this.game.count >= 14 * this.userList.length;
-    let allGiveup = this.userList.filter(e => !e.isLose).length <= 1;
-    // 三人爆点
-    let allBoom = this.userList.filter(e => this.getSumExpFirst(e.ballList) <= 28).length <= 1;
-    isFinish = roundFinish || allGiveup || allBoom;
+    let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) <= 28).length <= 1;
+    isFinish = roundFinish || isLose;
     let winner = { total: 0, balls: [], uid: 0, gain: 0 };
     this.userList
       .filter(e => !e.isLose)

@@ -6,7 +6,7 @@ async function initRoomConfig() {
   const configRoom = [
     {
       id: 1,
-      name: '新手房',
+      name: '初级房',
       basicChip: 20000,
       // 加注列表
       chipList: JSON.stringify([20000, 40000, 60000, 200000, 400000]),
@@ -19,7 +19,7 @@ async function initRoomConfig() {
     },
     {
       id: 2,
-      name: '普通房',
+      name: '中级房',
       basicChip: 40000,
       // 加注列表
       chipList: JSON.stringify([40000, 60000, 200000, 400000]),
@@ -32,7 +32,7 @@ async function initRoomConfig() {
     },
     {
       id: 3,
-      name: '中级房',
+      name: '高级房',
       basicChip: 40000,
       // 加注列表
       chipList: JSON.stringify([40000, 60000, 200000, 400000]),
@@ -45,7 +45,7 @@ async function initRoomConfig() {
     },
     {
       id: 4,
-      name: '高级房',
+      name: '大师房',
       basicChip: 40000,
       // 加注列表
       chipList: JSON.stringify([40000, 60000, 200000, 400000]),
@@ -67,7 +67,7 @@ async function initRoomConfig() {
 
 async function initUser() {
   const listUser = [
-    { tagCheat: true, coin: 50000, uid: 111, nickname: '钱最多', avatar: 'https://img0.baidu.com/it/u=16966295,3736937037&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
+    { tagCheat: true, coin: 200000, uid: 111, nickname: '钱最多', avatar: 'https://img0.baidu.com/it/u=16966295,3736937037&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
     { tagCheat: false, coin: 10000000, uid: 112, nickname: '钱很少', avatar: 'https://img2.baidu.com/it/u=2078308964,2142755897&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },
     { tagCheat: false, coin: 10000000, uid: 113, nickname: '钱很多', avatar: 'https://img2.baidu.com/it/u=2391726625,2951775714&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500' },
     { tagCheat: false, coin: 10000000, uid: 114, nickname: '输一点', avatar: 'https://img0.baidu.com/it/u=164232245,2005229505&fm=253&fmt=auto&app=138&f=JPEG?w=400&h=400' },

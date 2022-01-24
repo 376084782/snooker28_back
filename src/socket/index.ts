@@ -158,11 +158,17 @@ export default class socketManager {
         break;
       }
       case 'READY': {
+        if (!roomCtr) {
+          return;
+        }
         let { flag } = data;
         roomCtr.changeReady(uid, flag)
         break
       }
       case 'ACTION': {
+        if (!roomCtr) {
+          return;
+        }
         let { type, extraData } = data
         roomCtr.doAction(uid, type, extraData)
         break
