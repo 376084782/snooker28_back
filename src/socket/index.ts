@@ -3,6 +3,7 @@ import PROTOCLE from "./config/PROTOCLE";
 import { PEOPLE_EACH_GAME_MAX } from "./config";
 import Util from "./Util";
 import ModelUser from "../models/ModelUser";
+import SocketServer from "./SocketServer";
 
 
 export default class socketManager {
@@ -53,6 +54,7 @@ export default class socketManager {
     // console.log('======初始化io======')
     this.io = io;
     this.listen();
+    SocketServer.init()
 
   }
   static getInRoomByUid(uid) {

@@ -1,3 +1,4 @@
+import SocketServer from "./socket/SocketServer";
 
 var createError = require('http-errors');
 var express = require('express');

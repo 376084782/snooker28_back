@@ -3,11 +3,19 @@ import AgoraTokenGenerater from "../api/AgoraTokenGenerater";
 import Util from "../socket/Util";
 import ModelUser from "../models/ModelUser";
 import ModelConfigRoom from "../models/ModelConfigRoom";
+import SocketServer from "../socket/SocketServer";
 
 var express = require("express");
 var router = express.Router();
 /* GET home page. */
 
+router.post("/server/socket/test", async (req, res, next) => {
+  let data = req.body;
+  let conf: any = await SocketServer.sendMsg(data);
+  res.send({
+    code: 0, data: conf
+  });
+});
 router.post("/room/update", async (req, res, next) => {
   let data = req.body;
   let conf: any = await ModelConfigRoom.updateOne({ id: data.id }, data);
