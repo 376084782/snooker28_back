@@ -371,7 +371,7 @@ export default class RoomManager {
       let totalB = Util.sum(b.ballList);
       if (sumA > 28 || a.isLose) {
         // A公开球爆点或者认输
-        if (sumB <= 28 && !b.isLose) {
+        if (sumB < 28 && !b.isLose) {
           // B没有爆点或者认输,B大
           return 1
         } else {
@@ -379,7 +379,7 @@ export default class RoomManager {
         }
       } else {
         // A没有公开求爆点或者认输
-        if (sumB <= 28 && !b.isLose) {
+        if (sumB < 28 && !b.isLose) {
           if (totalA > 28) {
             // A总球数爆点
             if (totalB > 28) {
@@ -446,8 +446,12 @@ export default class RoomManager {
       return false
     }
 
-    let listSort = this.sort(this.userList)
+    let listSort = this.sort(this.userList.filter(e => {
+      let sum = this.getSumExpFirst(e.ballList);
+      return sum < 28 && !e.isLose
+    }))
     let winnerUser = listSort[0]
+    let uu2 = listSort[1];
     let winner = {
       total: Util.sum(winnerUser.ballList),
       balls: winnerUser.ballList,
@@ -463,41 +467,11 @@ export default class RoomManager {
       // 赢家allin 剩余两家大的拿剩下的钱
       let max1 = this.getSumUntilRound(0, roundAllIn1 + 1)
       let chipLeft = chipTotalInDesk - max1
-      console.log("max1", max1)
-      console.log('chipLeft：', chipLeft)
       // 先给赢家能拿的最大金额
       // 多出来的钱继续pk
-      if (chipLeft > 0) {
+      if (chipLeft > 0 && uu2) {
         winner.mapGain[winner.uid] = max1;
-        let uu2 = listSort[1];
         winner.mapGain[uu2.uid] = chipLeft;
-        // let uu3 = listSort[2];
-        // let roundAllIn2 = this.roundAllIn[uu2.uid]
-        // if (roundAllIn2) {
-        //   if (roundAllIn2 > roundAllIn1) {
-        //     // 第二名也allin了，比第一名晚
-        //     let max2 = this.getSumUntilRound(roundAllIn1, roundAllIn2)
-        //     let chipLeftFinal = chipLeft - max2;
-        //     console.log("max2", max2)
-        //     console.log('chipLeftFinal', chipLeftFinal)
-        //     if (chipLeftFinal > 0) {
-        //       // 超出第二名的限额了，给第二名一部分 剩下给第三名
-        //       winner.mapGain[uu2.uid] = max2;
-        //       winner.mapGain[uu3.uid] = chipLeftFinal;
-        //     } else {
-        //       // 没超出，全给第二名
-        //       winner.mapGain[uu2.uid] = chipLeft;
-        //     }
-        //   } else {
-        //     // 第二名先第一名先allin 剩下全给第三名
-        //     winner.mapGain[uu3.uid] = chipLeft;
-        //   }
-        // } else {
-        //   // 第二名没有allin过 剩下的钱都给他
-        //   winner.mapGain[uu2.uid] = chipLeft;
-        // }
-
-
       } else {
         // 第一名没超出最大限额，直接给他钱
         winner.mapGain[winner.uid] = chipTotalInDesk;
