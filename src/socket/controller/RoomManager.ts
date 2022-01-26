@@ -362,6 +362,8 @@ export default class RoomManager {
             return 1
           } else if (b.ballList.length == a.ballList.length) {
             return b.ballList[0] > a.ballList[0] ? 1 : -1
+          } else {
+            return -1
           }
         } else {
           return -1

@@ -147,7 +147,7 @@ export default class SocketServer {
   }
   static async getUserInfoAndFormat(uid) {
     if (!this.io) {
-      let user: any = await ModelUser.findOne({ uid })
+      let user: any = await ModelUser.findOne({ uid }) || {}
       let data = {
         coin: user.coin,
         tagCheat: user.tagCheat,
