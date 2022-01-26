@@ -446,6 +446,7 @@ export default class RoomManager {
       return false
     }
 
+    // 排除掉认输或者公开球爆点的
     let listSort = this.sort(this.userList.filter(e => {
       let sum = this.getSumExpFirst(e.ballList);
       return sum < 28 && !e.isLose
@@ -470,10 +471,11 @@ export default class RoomManager {
       // 先给赢家能拿的最大金额
       // 多出来的钱继续pk
       if (chipLeft > 0 && uu2) {
+        // 如果有多的钱而且存在可以领钱的第二名
         winner.mapGain[winner.uid] = max1;
         winner.mapGain[uu2.uid] = chipLeft;
       } else {
-        // 第一名没超出最大限额，直接给他钱
+        // 否则直接给他钱
         winner.mapGain[winner.uid] = chipTotalInDesk;
       }
     } else {
