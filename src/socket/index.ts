@@ -2,7 +2,6 @@ import RoomManager from "./controller/RoomManager";
 import PROTOCLE from "./config/PROTOCLE";
 import { PEOPLE_EACH_GAME_MAX } from "./config";
 import Util from "./Util";
-import ModelUser from "../models/ModelUser";
 import SocketServer from "./SocketServer";
 
 
@@ -10,6 +9,7 @@ export default class socketManager {
   static io;
   static userSockets = {};
   static aliveRoomList: RoomManager[] = [];
+  static userMap = {};
   static async getRoomCanJoin({ level }) {
     // 检查当前已存在的房间中 公开的，人未满的,未开始游戏的
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
@@ -50,11 +50,11 @@ export default class socketManager {
       }
     });
   }
-  static init(io) {
+  static async init(io) {
     // console.log('======初始化io======')
     this.io = io;
+    // await SocketServer.init()
     this.listen();
-    SocketServer.init()
 
   }
   static getInRoomByUid(uid) {
@@ -76,23 +76,7 @@ export default class socketManager {
     if (!uid) {
       return;
     }
-    let modelUser = await ModelUser.findOne({ uid: uid })
-    let userInfo = {
-      uid: uid,
-      nickname: '测试玩家' + uid,
-      avatar: '',
-      coin: 0
-    }
-    if (modelUser) {
-      userInfo = {
-        nickname: modelUser.nickname,
-        uid: modelUser.uid,
-        avatar: modelUser.avatar,
-        coin: modelUser.coin
-      }
-    } else {
-      await ModelUser.create(userInfo);
-    }
+
     let data = res.data;
     let type = res.type;
     if (this.userSockets[uid] && this.userSockets[uid] != socket) {
@@ -123,6 +107,7 @@ export default class socketManager {
           // 获取游戏数据并返回
           dataGame = roomCtr.getRoomInfo();
         }
+        let userInfo = await SocketServer.getUserInfoAndFormat(uid)
         this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
           userInfo: userInfo,
           dataGame
@@ -141,8 +126,8 @@ export default class socketManager {
           }
 
           let targetRoom: RoomManager;
+          let userInfo = await SocketServer.getUserInfoAndFormat(uid)
           targetRoom = await this.getRoomCanJoin({ level });
-
           targetRoom.join(userInfo);
         } else {
           if (!roomCtr) {
@@ -173,6 +158,13 @@ export default class socketManager {
         }
         let { type, extraData } = data
         roomCtr.doAction(uid, type, extraData)
+        break
+      }
+      case 'SHOW_BALLS': {
+        if (!roomCtr) {
+          return;
+        }
+        roomCtr.showBalls(uid)
         break
       }
     }

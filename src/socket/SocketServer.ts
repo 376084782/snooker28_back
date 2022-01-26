@@ -1,3 +1,6 @@
+import ModelUser from "../models/ModelUser";
+import Util from "./Util";
+
 // 1 引入模块
 const net = require('net');
 const readline = require('readline');
@@ -8,22 +11,29 @@ export default class SocketServer {
   static io;
 
   static init() {
+    return new Promise(rsv => {
 
-    this.io = new net.Socket();
-    // 3 链接
-    this.io.connect({ port: 8888, host: '101.34.156.23' });
+      this.io = new net.Socket();
+      // 3 链接
+      this.io.connect({ port: 8888, host: '101.34.156.23' });
 
-    this.io.setEncoding('utf8');
-    this.io.on('ready', async () => {
-      setInterval(e => { this.doHeart() }, 5000)
-      // this.getUserList(10, 1, '')
-      // this.getAvatar('2wR0NEBo')
-      // this.setUserTag('2wR0NEBo', true)
-      // this.setUserInfo({
-      //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
-      // })
-      // this.getUserInfo('2wR0NEBo')
+      this.io.setEncoding('utf8');
+      this.io.on('ready', async () => {
+        setInterval(e => { this.doHeart() }, 5000)
+        // this.getUserList(10, 1, '')
+        // this.getAvatar('2wR0NEBo2')
+        // this.setUserTag('2wR0NEBo', true)
+        // this.setUserInfo({
+        //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
+        // })
+        // this.getUserInfo('2wR0NEBo')
+        rsv(null)
+      })
+      this.listen();
     })
+
+  }
+  static listen() {
     this.io.on('connect', (chunk) => {
       console.log('connect', chunk)
     })
@@ -39,21 +49,38 @@ export default class SocketServer {
     this.io.on('close', (e) => {
       console.log('close', e);
     })
-    this.listen();
+  }
+
+  static getBytesLength(str) {
+    var totalLength = 0;
+    var charCode;
+    for (var i = 0; i < str.length; i++) {
+      charCode = str.charCodeAt(i);
+      if (charCode < 0x007f) {
+        totalLength++;
+      } else if ((0x0080 <= charCode) && (charCode <= 0x07ff)) {
+        totalLength += 2;
+      } else if ((0x0800 <= charCode) && (charCode <= 0xffff)) {
+        totalLength += 3;
+      } else {
+        totalLength += 4;
+      }
+    }
+    return totalLength;
   }
   static encode(data = {}) {
     let strJson = JSON.stringify(data)
     let strSecret = 'billiards'
     // 得到两个byte数组
-    let buffer = Buffer.alloc(strJson.length, strJson)
-    let bufferSecret = Buffer.alloc(strSecret.length, strSecret)
-    // 俩数组去异或
+    let buffer = Buffer.alloc(this.getBytesLength(strJson), strJson)
+    let bufferSecret = Buffer.alloc(this.getBytesLength(strSecret), strSecret)
+    // 俩数组去异或 
     for (let i = 0; i < buffer.length; i++) {
       buffer[i] ^= bufferSecret[i % bufferSecret.length]
     }
     // 在最前面写入长度
     let lenBuffer = Buffer.alloc(4)
-    lenBuffer.writeUInt8(buffer.length)
+    lenBuffer.writeUInt32LE(buffer.length)
     let finalBuff = Buffer.concat([lenBuffer, buffer], lenBuffer.length + buffer.length)
     return finalBuff
   }
@@ -79,14 +106,14 @@ export default class SocketServer {
     }
     return JSON.parse(bufferData.toString())
   }
-  static funcId = 0;
   static callMap = {};
   static sendMsg(data: DataServer) {
     return new Promise((rsv, rej) => {
-      this.funcId++;
-      let callName = `snooker28_${this.funcId}`
+      let callName = `snooker28_${Util.getUniqId()}`
       data.kwargs['callback'] = callName
-      console.log(data, '发送数据')
+      if (data.method != '_heartbeat') {
+        console.log(data, '发送数据')
+      }
       this.callMap[callName] = e => {
         if (e.code == 0) {
           rsv(e.data)
@@ -118,6 +145,40 @@ export default class SocketServer {
     console.log(data, 'setUserTag')
     return data;
   }
+  static async getUserInfoAndFormat(uid) {
+    if (!this.io) {
+      let user: any = await ModelUser.findOne({ uid })
+      let data = {
+        coin: user.coin,
+        tagCheat: user.tagCheat,
+        uid: user.uid,
+        nickname: user.nickname,
+        avatar: user.avatar,
+      }
+      return data
+    }
+    let data = await this.sendMsg({
+      "method": "_GetUserInfo",
+      "args": [],
+      "kwargs": {
+        uid
+      }
+    }) as any
+    return {
+      // 拥有的金币
+      coin: data.assets.golds,
+      // 是否高概率获胜 25-28
+      tagCheat: data.flag,
+      // uid
+      uid: data.id,
+      // 玩家名称
+      nickname: data.user_name,
+      // 玩家头像
+      avatar: data.avatar,
+
+    }
+
+  }
   static async getUserInfo(uid) {
     let data = await this.sendMsg({
       "method": "_GetUserInfo",
@@ -130,12 +191,16 @@ export default class SocketServer {
     return data;
   }
   static async setUserInfo({ uid, type, gold, diamond, reason }) {
+    if (!this.io) {
+      let user = await ModelUser.findOne({ uid })
+      let data = await ModelUser.updateOne({ uid }, { coin: type == 'add' ? user.coin + gold : user.coin - gold })
+      return data
+    }
     let data = await this.sendMsg({
       "method": "_SetAssets",
       "args": [],
       "kwargs": { uid, type, gold, diamond, reason }
     })
-    console.log(data, 'setUserInfo')
     return data
   }
   static async getAvatar(uid) {
@@ -171,9 +236,6 @@ export default class SocketServer {
     } else {
 
     }
-  }
-  static listen() {
-    this.io.on("connect", this.onConnect);
   }
   static async onMessage(res, socket) {
 

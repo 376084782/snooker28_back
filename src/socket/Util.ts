@@ -1,6 +1,4 @@
 const http = require("http");
-import ModelConfigRoom from "../models/ModelConfigRoom";
-import ModelUser from "../models/ModelUser";
 export default class Util {
   
   static sum(list) {

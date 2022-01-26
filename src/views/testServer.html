@@ -23,6 +23,36 @@
       height: 40%;
       width: 100%;
     }
+
+    pre {
+      width: 100%;
+      outline: 1px solid #ccc;
+      padding: 5px;
+      margin: 5px;
+      overflow: hidden;
+      overflow-y: scroll;
+
+    }
+
+    .string {
+      color: green;
+    }
+
+    .number {
+      color: darkorange;
+    }
+
+    .boolean {
+      color: blue;
+    }
+
+    .null {
+      color: magenta;
+    }
+
+    .key {
+      color: red;
+    }
   </style>
 </head>
 
@@ -30,15 +60,24 @@
   <textarea id="dataSend" placeholder="请输入数据，Json格式"></textarea>
   <button id="btn">提交</button>
   <p>==============返回数据============</p>
-  <textarea id="dataRes"></textarea>
+  <pre id="dataRes"></pre>
   <script>
     let btn = document.getElementById('btn');
     let btnClear = document.getElementById('btnClear');
     let txtRes = document.getElementById('dataRes');
     function onClear() {
-      txtRes.value = ''
+      txtRes.innerHTML = ''
     }
     btn.addEventListener('click', onClick)
+    document.getElementById('dataSend').addEventListener('blur', e => {
+      let str = document.getElementById('dataSend').value
+      try {
+        let data = JSON.parse(str)
+        document.getElementById('dataSend').value = JSON.stringify(data, undefined, 2)
+      } catch (e) {
+        alert(e)
+      }
+    })
     function onClick() {
       onClear()
       let str = document.getElementById('dataSend').value
@@ -47,11 +86,34 @@
         axios({
           url: 'http://39.101.162.107:9020/server/socket/test', method: 'post', data
         }).then(e => {
-          txtRes.value += JSON.stringify(e.data.data)
+          txtRes.innerHTML += syntaxHighlight(e.data.data)
         })
       } catch (e) {
         alert(e)
       }
+    }
+
+
+    function syntaxHighlight(json) {
+      if (typeof json != 'string') {
+        json = JSON.stringify(json, undefined, 2);
+      }
+      json = json.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'key';
+          } else {
+            cls = 'string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'boolean';
+        } else if (/null/.test(match)) {
+          cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
     }
   </script>
 </body>

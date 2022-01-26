@@ -3,7 +3,7 @@ import socketManager from "..";
 import _ from "lodash";
 import PROTOCLE from "../config/PROTOCLE";
 import ModelConfigRoom from "../../models/ModelConfigRoom";
-import ModelUser from "../../models/ModelUser";
+import SocketServer from "../SocketServer";
 // 游戏内玩家全部离线的房间，自动清除
 export default class RoomManager {
   // 房间等级
@@ -68,14 +68,12 @@ export default class RoomManager {
   timerJoin = {};
   // 玩家加入
   async join(userInfo) {
-    await this.initConfig()
-    let dataUser = await ModelUser.findOne({ uid: userInfo.uid });
-    if (dataUser.coin > this.config.max) {
+    if (userInfo.coin > this.config.max) {
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "金币大于该房间上限"
       });
       return
-    } if (dataUser.coin < this.config.min) {
+    } if (userInfo.coin < this.config.min) {
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "金币不足"
       });
@@ -184,16 +182,18 @@ export default class RoomManager {
   }
   config: any;
   async doStartGame() {
+    await this.initConfig()
+    this.ballsOpen = false;
+    this.winner = {}
     // 重置游戏数据
     this.step = 1;
     // 分发私有球
-    for (let i = 1; i < this.userList.length + 1; i++) {
-      let userInfo = this.userList.find(e => e.seat == i)
+    this.userList.forEach(userInfo => {
       if (!userInfo.ballList) {
         userInfo.ballList = []
       }
-      userInfo.ballList.push(Util.getRandomInt(1, 15));
-    }
+      userInfo.ballList.push(Util.getRandomInt(1, 10));
+    })
     this.game.chip = this.config.basicChip;
 
 
@@ -233,7 +233,7 @@ export default class RoomManager {
   flagCanDoAction = true;
   async doAction(uid, type, data?) {
     let user = this.getUserById(uid);
-    let userInDB = await ModelUser.findOne({ uid });
+
     if (user.seat != this.game.currentSeat || !this.flagCanDoAction) {
       return
     }
@@ -248,13 +248,15 @@ export default class RoomManager {
       this.game.chip = data.chip;
       this.throwMoney(uid, data.chip);
     } else if (type == 2) {
+      this.game.chip = data.chip;
+
       if (this.game.ballLeft.length <= 0) {
         return
       }
       // 要球
       let ballIdx = Util.getRandomInt(0, this.game.ballLeft.length)
 
-      if (userInDB.tagCheat) {
+      if (user.tagCheat) {
         let p = Math.random() < .7;
         if (p) {
           // 高概率使现在的球相加=25至28
@@ -279,11 +281,12 @@ export default class RoomManager {
           ballLeft: this.game.ballLeft
         });
       await Util.delay(600);
-      this.throwMoney(uid, this.game.chip);
+      this.throwMoney(uid, data.chip);
       await Util.delay(200);
     } else if (type == 3) {
+      this.game.chip = data.chip;
       // 不要球
-      this.throwMoney(uid, this.game.chip);
+      this.throwMoney(uid, data.chip);
     } else if (type == 4) {
       // 放弃
       user.isLose = true;
@@ -293,7 +296,6 @@ export default class RoomManager {
         { uid });
     }
     this.game.count++;
-    this.callNextTurn(this.getNextSeat())
     socketManager.sendMsgByUidList(
       this.uidList,
       'ACTION',
@@ -301,6 +303,7 @@ export default class RoomManager {
         dataGame: this.getRoomInfo(),
         uid, type, data
       });
+    this.callNextTurn(this.getNextSeat())
     let isFinish = this.checkFinish();
     if (isFinish) {
     } else {
@@ -316,7 +319,7 @@ export default class RoomManager {
       // 超时自动选择不要球
       let user = this.userList.find(e => e.seat == this.game.currentSeat)
       if (user) {
-        this.doAction(user.uid, 3)
+        this.doAction(user.uid, 3, { chip: this.game.chip })
       }
     }, timeCost);
     this.game.currentSeat = seat;
@@ -335,8 +338,8 @@ export default class RoomManager {
     return list.sort((a, b) => {
       let totalA = Util.sum(a.ballList);
       let totalB = Util.sum(b.ballList);
-      if (totalA > 28) {
-        if (totalB <= 28) {
+      if (totalA > 28 || a.isLose) {
+        if (totalB <= 28 && !b.isLose) {
           return 1
         } else {
           if (b.ballList.length > a.ballList.length) {
@@ -367,16 +370,38 @@ export default class RoomManager {
 
     })
   }
+  getSumUntilRound(round) {
+    let sum = 0;
+    this.userList.forEach(user => {
+      sum += Util.sum(user.deskList.slice(0, round))
+    })
+    return sum
+  }
+  winner: any = {}
+  ballsOpen = false;
+  showBalls(uid) {
+    if (uid != this.winner.uid || this.ballsOpen) {
+      return
+    }
+    this.ballsOpen = true
+    console.log('SHOW_BALLS')
+    socketManager.sendMsgByUidList(
+      this.uidList,
+      'SHOW_BALLS',
+      {
+        winner: this.winner,
+        dataGame: this.getRoomInfo()
+      });
+  }
   checkFinish() {
     let isFinish = false;
     // 15轮结束
     let roundFinish = this.game.count >= 14 * this.userList.length;
-    let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) <= 28).length <= 1;
+    let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) < 28).length <= 1;
     isFinish = roundFinish || isLose;
     if (!isFinish) {
       return false
     }
-
 
     let listSort = this.sort(this.userList)
     let winnerUser = listSort[0]
@@ -386,10 +411,12 @@ export default class RoomManager {
       uid: winnerUser.uid,
       mapGain: {}
     }
+    this.winner = winner
+    console.log(listSort, 'listSort')
 
     if (this.roundAllIn[winner.uid]) {
       // 赢家allin 剩余两家大的拿剩下的钱
-      let max1 = Util.sum(winnerUser.deskList) * 2;
+      let max1 = this.getSumUntilRound(this.roundAllIn[winner.uid])
       let chipTotalInDesk = Util.sum(this.game.deskList)
       let chipLeft = chipTotalInDesk - max1
       console.log("max1", max1)
@@ -401,7 +428,7 @@ export default class RoomManager {
         let uu2 = listSort[1];
         if (this.roundAllIn[uu2.uid]) {
           // 这个人也allin了
-          let max2 = Util.sum(uu2.deskList) * 2;
+          let max2 = this.getSumUntilRound(this.roundAllIn[uu2.uid])
           let chipLeftFinal = chipLeft - max2;
           console.log("max2", max2)
           console.log('chipLeftFinal', chipLeftFinal)
@@ -429,6 +456,9 @@ export default class RoomManager {
     } else {
       winner.mapGain[winner.uid] = Util.sum(this.game.deskList)
     }
+    if (roundFinish) {
+      this.showBalls(winner.uid)
+    }
     this.resetGameInfo()
     for (let uu in winner.mapGain) {
       this.changeMoney(uu, winner.mapGain[uu])
@@ -444,7 +474,7 @@ export default class RoomManager {
     return true
   }
   async throwMoney(uid, num) {
-    let dataUser = await ModelUser.findOne({ uid });
+    let dataUser = this.userList.find(e => e.uid == uid)
     if (dataUser.coin == 0) {
       return
     }
@@ -470,9 +500,11 @@ export default class RoomManager {
   }
   async changeMoney(uid, num) {
     // 修改玩家金币
-    let dataUser = await ModelUser.findOne({ uid });
+    let dataUser = this.userList.find(e => e.uid == uid)
     dataUser.coin += num;
-    await ModelUser.updateOne({ uid }, { coin: dataUser.coin })
+    await SocketServer.setUserInfo({
+      uid: uid, type: num > 0 ? 'add' : 'sub', gold: Math.abs(num), diamond: 0, reason: '桌球28游戏'
+    })
     let user = this.getUserById(uid);
     user.coin = dataUser.coin;
     socketManager.sendMsgByUidList(this.uidList, PROTOCLE.SERVER.ROOM_USER_UPDATE, {

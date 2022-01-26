@@ -1,7 +1,4 @@
 import API from "../api/API";
-import AgoraTokenGenerater from "../api/AgoraTokenGenerater";
-import Util from "../socket/Util";
-import ModelUser from "../models/ModelUser";
 import ModelConfigRoom from "../models/ModelConfigRoom";
 import SocketServer from "../socket/SocketServer";
 
@@ -33,14 +30,14 @@ router.get("/room/list", async (req, res, next) => {
     code: 0, data: conf
   });
 });
-router.get("/user/list", async (req, res, next) => {
-  let data = req.query;
-  let list: any = await ModelUser.find({});
+router.post("/user/list", async (req, res, next) => {
+  let { pageSize, page, userName } = req.body;
+  let list: any = await SocketServer.getUserList(pageSize, page, userName)
   res.send(list);
 });
 router.post("/user/toggleCheat", async (req, res, next) => {
-  let data = req.body;
-  await ModelUser.updateOne({ uid: data.uid }, { tagCheat: data.flag });
+  let { uid, flag } = req.body;
+  await SocketServer.setUserTag(uid, flag);
   res.send({ code: 0 });
 });
 

@@ -6,7 +6,7 @@ const ModelUser = new Schema({
   // 是否高概率获胜 25-28
   tagCheat: { type: Boolean, default: false },
   // uid
-  uid: { type: Number, default: 0 },
+  uid: { type: String, default: '' },
   // 玩家名称
   nickname: { type: String, default: '' },
   // 玩家头像
