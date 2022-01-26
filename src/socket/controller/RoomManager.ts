@@ -435,7 +435,7 @@ export default class RoomManager {
     let turnFinish = this.game.count % this.userList.length == 0;
     let onlyOneNotAllin = turnFinish && this.userList.filter(e => !this.roundAllIn[e.uid]).length <= 1
     isFinish = roundFinish || isLose || onlyOneNotAllin;
-    if (!isFinish && onlyOneNotAllin) {
+    if (!isFinish) {
       return false
     }
 
