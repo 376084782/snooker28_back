@@ -453,7 +453,7 @@ export default class RoomManager {
     let roundAllIn1 = this.roundAllIn[winner.uid]
     if (roundAllIn1) {
       // 赢家allin 剩余两家大的拿剩下的钱
-      let max1 = this.getSumUntilRound(0, roundAllIn1)
+      let max1 = this.getSumUntilRound(0, roundAllIn1 + 1)
       let chipTotalInDesk = Util.sum(this.game.deskList)
       let chipLeft = chipTotalInDesk - max1
       console.log("max1", max1)
@@ -522,7 +522,9 @@ export default class RoomManager {
     if (dataUser.coin == 0) {
       return
     }
+    let nn = num
     if (dataUser.coin <= num) {
+      nn = dataUser.coin
       this.changeMoney(uid, -dataUser.coin)
       this.roundAllIn[uid] = Math.floor(this.game.count / this.userList.length)
     } else {
@@ -532,7 +534,7 @@ export default class RoomManager {
     if (!uu.deskList) {
       uu.deskList = []
     }
-    uu.deskList.push(num)
+    uu.deskList.push(nn)
     this.game.deskList.push(num);
     socketManager.sendMsgByUidList(
       this.uidList,
