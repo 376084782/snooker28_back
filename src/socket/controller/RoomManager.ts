@@ -447,10 +447,11 @@ export default class RoomManager {
     }
 
     // 排除掉认输或者公开球爆点的
-    let listSort = this.sort(this.userList.filter(e => {
-      let sum = this.getSumExpFirst(e.ballList);
-      return sum < 28 && !e.isLose
-    }))
+    // let listSort = this.sort(this.userList.filter(e => {
+    //   let sum = this.getSumExpFirst(e.ballList);
+    //   return sum < 28 && !e.isLose
+    // }))
+    let listSort = this.sort(this.userList)
     let winnerUser = listSort[0]
     let uu2 = listSort[1];
     let winner = {
@@ -471,14 +472,15 @@ export default class RoomManager {
       // 先给赢家能拿的最大金额
       // 多出来的钱继续pk
       if (chipLeft > 0 && uu2) {
-        // 如果有多的钱而且存在可以领钱的第二名
+        // 如果有多的钱而且存在其他公开球不爆点且没认输的玩家
         winner.mapGain[winner.uid] = max1;
         winner.mapGain[uu2.uid] = chipLeft;
       } else {
-        // 否则直接给他钱
+        // 没有多的钱 或者 不存在其他公开球不爆点且没认输的玩家  直接给他钱
         winner.mapGain[winner.uid] = chipTotalInDesk;
       }
     } else {
+      // 赢家没有allin过 直接给他钱
       winner.mapGain[winner.uid] = chipTotalInDesk
     }
     if (roundFinish) {
