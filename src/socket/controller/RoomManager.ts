@@ -427,6 +427,13 @@ export default class RoomManager {
         dataGame: this.getRoomInfo()
       });
   }
+  getDeskAll() {
+    let sum = 0;
+    this.userList.forEach(e => {
+      sum += Util.sum(e.deskList)
+    })
+    return sum
+  }
   checkFinish() {
     let isFinish = false;
     // 15轮结束
@@ -451,10 +458,10 @@ export default class RoomManager {
     console.log(listSort, 'listSort')
 
     let roundAllIn1 = this.roundAllIn[winner.uid]
+    let chipTotalInDesk = this.getDeskAll()
     if (roundAllIn1) {
       // 赢家allin 剩余两家大的拿剩下的钱
       let max1 = this.getSumUntilRound(0, roundAllIn1 + 1)
-      let chipTotalInDesk = Util.sum(this.game.deskList)
       let chipLeft = chipTotalInDesk - max1
       console.log("max1", max1)
       console.log('chipLeft：', chipLeft)
@@ -495,10 +502,8 @@ export default class RoomManager {
         // 第一名没超出最大限额，直接给他钱
         winner.mapGain[winner.uid] = chipTotalInDesk;
       }
-
-
     } else {
-      winner.mapGain[winner.uid] = Util.sum(this.game.deskList)
+      winner.mapGain[winner.uid] = chipTotalInDesk
     }
     if (roundFinish) {
       this.showBalls(winner.uid)
