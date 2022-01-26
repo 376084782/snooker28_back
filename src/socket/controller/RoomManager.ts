@@ -336,38 +336,72 @@ export default class RoomManager {
   timerNext = null;
   sort(list) {
     return list.sort((a, b) => {
-      let totalA = Util.sum(a.ballList);
-      let totalB = Util.sum(b.ballList);
-      if (totalA > 28 || a.isLose) {
-        if (totalB <= 28 && !b.isLose) {
+      let sumA = this.getSumExpFirst(a.ballList);
+      let sumB = this.getSumExpFirst(b.ballList);
+
+      let funcCheck2 = () => {
+        // B爆点或者认输了，继续比大小
+        if (b.ballList.length > a.ballList.length) {
+          // B球多 B大
           return 1
+        } else if (b.ballList.length == a.ballList.length) {
+          // 一样多的球 第一个球谁大就谁大
+          return b.ballList[0] > a.ballList[0] ? 1 : -1
         } else {
+          // B球少 B小
+          return -1
+        }
+      }
+      let funcCheck1 = () => {
+        // B没有公开球爆点或者认输
+        if (totalB > totalA) {
+          // 如果总和B大 B获胜
+          return 1
+        } else if (totalB == totalA) {
           if (b.ballList.length > a.ballList.length) {
             return 1
           } else if (b.ballList.length == a.ballList.length) {
             return b.ballList[0] > a.ballList[0] ? 1 : -1
-          } else {
-            return -1
-          }
-        }
-      } else {
-        if (totalB <= 28) {
-          if (totalB > totalA) {
-            return 1
-          } else if (totalB == totalA) {
-            if (b.ballList.length > a.ballList.length) {
-              return 1
-            } else if (b.ballList.length == a.ballList.length) {
-              return b.ballList[0] > a.ballList[0] ? 1 : -1
-            }
-          } else {
-            return -1
           }
         } else {
           return -1
         }
       }
-
+      let totalA = Util.sum(a.ballList);
+      let totalB = Util.sum(b.ballList);
+      if (sumA > 28 || a.isLose) {
+        // A公开球爆点或者认输
+        if (sumB <= 28 && !b.isLose) {
+          // B没有爆点或者认输,B大
+          return 1
+        } else {
+          return funcCheck2()
+        }
+      } else {
+        // A没有公开求爆点或者认输
+        if (sumB <= 28 && !b.isLose) {
+          if (totalA > 28) {
+            // A总球数爆点
+            if (totalB > 28) {
+              // B总球数也爆点了
+              return funcCheck2()
+            } else {
+              // B总球没有爆点 B大
+              return 1
+            }
+          } else {
+            // A总球没有爆点
+            if (totalB > 28) {
+              // B总球爆点 A大
+              return -1
+            } else {
+              return funcCheck1()
+            }
+          }
+        } else {
+          return -1
+        }
+      }
     })
   }
   getSumUntilRound(min, max) {
@@ -398,8 +432,10 @@ export default class RoomManager {
     // 15轮结束
     let roundFinish = this.game.count >= 14 * this.userList.length;
     let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) < 28).length <= 1;
-    isFinish = roundFinish || isLose;
-    if (!isFinish) {
+    let turnFinish = this.game.count % this.userList.length == 0;
+    let onlyOneNotAllin = turnFinish && this.userList.filter(e => !this.roundAllIn[e.uid]).length <= 1
+    isFinish = roundFinish || isLose || onlyOneNotAllin;
+    if (!isFinish && onlyOneNotAllin) {
       return false
     }
 
@@ -422,39 +458,41 @@ export default class RoomManager {
       let chipLeft = chipTotalInDesk - max1
       console.log("max1", max1)
       console.log('chipLeft：', chipLeft)
+      // 先给赢家能拿的最大金额
+      // 多出来的钱继续pk
       if (chipLeft > 0) {
-        // 先给赢家最大金额
         winner.mapGain[winner.uid] = max1;
-        // 多出来的钱继续pk
         let uu2 = listSort[1];
-        let uu3 = listSort[2];
-        let roundAllIn2 = this.roundAllIn[uu2.uid]
-        if (roundAllIn2) {
-          if (roundAllIn2 > roundAllIn1) {
-            // 这个人也allin了，比第一名晚
-            let max2 = this.getSumUntilRound(roundAllIn1, roundAllIn2)
-            let chipLeftFinal = chipLeft - max2;
-            console.log("max2", max2)
-            console.log('chipLeftFinal', chipLeftFinal)
-            if (chipLeftFinal > 0) {
-              // 超出第二名的限额了，给第二名一部分 剩下给第三名
-              winner.mapGain[uu2.uid] = max2;
-              winner.mapGain[uu3.uid] = chipLeftFinal;
-            } else {
-              // 没超出，全给第二名
-              winner.mapGain[uu2.uid] = chipLeft;
-            }
-          } else {
-            // 第二名先allin的 给第三名
-            winner.mapGain[uu3.uid] = chipLeft;
-          }
-        } else {
-          // 这个人正常玩了一把,拿了第二名
-          // 剩下的钱给他
-          winner.mapGain[uu2.uid] = chipLeft;
-        }
+        winner.mapGain[uu2.uid] = chipLeft;
+        // let uu3 = listSort[2];
+        // let roundAllIn2 = this.roundAllIn[uu2.uid]
+        // if (roundAllIn2) {
+        //   if (roundAllIn2 > roundAllIn1) {
+        //     // 第二名也allin了，比第一名晚
+        //     let max2 = this.getSumUntilRound(roundAllIn1, roundAllIn2)
+        //     let chipLeftFinal = chipLeft - max2;
+        //     console.log("max2", max2)
+        //     console.log('chipLeftFinal', chipLeftFinal)
+        //     if (chipLeftFinal > 0) {
+        //       // 超出第二名的限额了，给第二名一部分 剩下给第三名
+        //       winner.mapGain[uu2.uid] = max2;
+        //       winner.mapGain[uu3.uid] = chipLeftFinal;
+        //     } else {
+        //       // 没超出，全给第二名
+        //       winner.mapGain[uu2.uid] = chipLeft;
+        //     }
+        //   } else {
+        //     // 第二名先第一名先allin 剩下全给第三名
+        //     winner.mapGain[uu3.uid] = chipLeft;
+        //   }
+        // } else {
+        //   // 第二名没有allin过 剩下的钱都给他
+        //   winner.mapGain[uu2.uid] = chipLeft;
+        // }
+
+
       } else {
-        // 没超出最大限额，直接给他钱
+        // 第一名没超出最大限额，直接给他钱
         winner.mapGain[winner.uid] = chipTotalInDesk;
       }
 
@@ -502,7 +540,6 @@ export default class RoomManager {
       {
         uid, num
       });
-
   }
   async changeMoney(uid, num) {
     // 修改玩家金币
@@ -524,7 +561,7 @@ export default class RoomManager {
 
     let user = this.userList[idxNext];
     // 爆点或者放弃的，跳过
-    if (user.isLose || this.getSumExpFirst(user.ballList) > 28) {
+    if (user.isLose || this.getSumExpFirst(user.ballList) >= 28) {
       idxNext = (idxNext + 1) % (this.userList.length);
     }
     return this.userList[idxNext].seat;
