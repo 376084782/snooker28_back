@@ -15,18 +15,18 @@ export default class SocketServer {
 
       this.io = new net.Socket();
       // 3 链接
-      this.io.connect({ port: 8888, host: '101.34.156.23' });
+      this.io.connect({ port: 7777, host: '101.34.156.23' });
 
-      this.io.setEncoding('utf8');
+      this.io.setEncoding('ascii');
       this.io.on('ready', async () => {
         setInterval(e => { this.doHeart() }, 5000)
-        // this.getUserList(10, 1, '')
-        // this.getAvatar('2wR0NEBo2')
+        this.getUserList(100, 1, '')
+        // this.getAvatar('115')
         // this.setUserTag('2wR0NEBo', true)
         // this.setUserInfo({
         //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
         // })
-        this.getUserInfo('115')
+        // this.getUserInfo('115')
         rsv(null)
       })
       this.listen();
@@ -40,32 +40,29 @@ export default class SocketServer {
     let bufferCache = Buffer.alloc(0)
     let bufferLen = Buffer.alloc(0);
     this.io.on('data', (chunk) => {
+
       let buffer = Buffer.alloc(chunk.length, chunk);
-      // if (buffer[0] == 0xef && buffer[1] == 0xbf) {
-      //   buffer = buffer.slice(2, buffer.length)
-      // }
-      console.log(buffer, '收到buffer的入口')
-      let bufferData = Buffer.alloc(0);
+
+      console.log(buffer, 'buffer初始')
 
       if (bufferLen.length < 4) {
-        bufferLen = buffer.slice(0, 4)
-        bufferData = buffer.slice(4, buffer.length);
-        let len = bufferLen.readInt32LE();
-        console.log(buffer, bufferLen, len, '收到新包')
-      } else {
-        bufferData = buffer
+        bufferLen = buffer.slice(0, 8)
+        // 得到两个byte数组
+        let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret)
+        // 俩数组去异或
+        for (let i = 0; i < bufferLen.length; i++) {
+          bufferLen[i] ^= bufferSecret[i % bufferSecret.length]
+        }
       }
 
-      bufferCache = Buffer.concat([bufferCache, bufferData], bufferCache.length + bufferData.length)
+      bufferCache = Buffer.concat([bufferCache, buffer], bufferCache.length + buffer.length)
 
-
-      let len = bufferLen.readInt32LE();
-      console.log(buffer, bufferLen, bufferCache.length, len);
-
-
-      if (bufferCache.length >= len - 4) {
+      let len = +bufferLen.toString();
+      if (bufferCache.length >= len) {
         // 数据包长度足够
+        console.log(bufferCache, '拿去解码')
         this.getMsg(bufferCache)
+        // 解码后清空缓存的长度和数据
         bufferCache = Buffer.alloc(0);
         bufferLen = Buffer.alloc(0);
       }
@@ -99,6 +96,7 @@ export default class SocketServer {
     }
     return totalLength;
   }
+
   static encode(data = {}) {
     let strJson = JSON.stringify(data)
     let strSecret = 'billiards'
@@ -116,21 +114,22 @@ export default class SocketServer {
     return finalBuff
   }
 
+  static strSecret = 'billiards'
   static decode(bufferData: Buffer) {
-    let strSecret = 'billiards'
     // 得到两个byte数组
-    let bufferSecret = Buffer.alloc(strSecret.length, strSecret)
+    let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret)
     // 俩数组去异或
     for (let i = 0; i < bufferData.length; i++) {
       bufferData[i] ^= bufferSecret[i % bufferSecret.length]
     }
+    let str = bufferData.slice(8, bufferData.length)
     let res = {}
     try {
-      res = JSON.parse(bufferData.toString())
+      res = JSON.parse(str.toString())
       return res
     } catch (e) {
       console.warn('============JSON parse err=========================')
-      // console.warn(bufferData.toString())
+      console.warn(str.toString())
       // console.warn(e)
       return {}
     }
