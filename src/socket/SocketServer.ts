@@ -15,7 +15,7 @@ export default class SocketServer {
 
       this.io = new net.Socket();
       // 3 链接
-      this.io.connect({ port: 7777, host: '101.34.156.23' });
+      this.io.connect({ port: 8888, host: '101.34.156.23' });
 
       this.io.setEncoding('ascii');
       this.io.on('ready', async () => {
@@ -58,6 +58,7 @@ export default class SocketServer {
       bufferCache = Buffer.concat([bufferCache, buffer], bufferCache.length + buffer.length)
 
       let len = +bufferLen.toString();
+      console.log(bufferLen, bufferLen.toString(), 'buffer长度')
       if (bufferCache.length >= len) {
         // 数据包长度足够
         console.log(bufferCache, '拿去解码')
@@ -250,7 +251,7 @@ export default class SocketServer {
         pageSize, page, userName
       }
     })
-    // console.log(data, 'getUserList')
+    console.log(data, 'getUserList')
     return data
   }
 
