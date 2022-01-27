@@ -109,8 +109,9 @@ export default class SocketServer {
       res = JSON.parse(bufferData.toString())
       return res
     } catch (e) {
-      console.log(bufferData.toString())
-      console.log(e)
+      console.warn('============JSON parse err=========================')
+      console.warn(bufferData.toString())
+      console.warn(e)
       return {}
     }
   }
