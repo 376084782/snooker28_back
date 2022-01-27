@@ -12,6 +12,10 @@ export default class SocketServer {
 
   static init() {
     return new Promise(rsv => {
+      // rsv(null)
+      // return;
+
+      
       this.io = new net.Socket();
       // 3 链接
       this.io.connect({ port: 8888, host: '101.34.156.23' });
