@@ -26,7 +26,7 @@ export default class SocketServer {
         // this.setUserInfo({
         //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
         // })
-        // this.getUserInfo('115')
+        this.getUserInfo('115')
         rsv(null)
       })
       this.listen();
@@ -41,9 +41,9 @@ export default class SocketServer {
     let bufferLen = Buffer.alloc(0);
     this.io.on('data', (chunk) => {
       let buffer = Buffer.alloc(chunk.length, chunk);
-      if (buffer[0] == 0xef && buffer[1] == 0xbf) {
-        buffer = buffer.slice(2, buffer.length)
-      }
+      // if (buffer[0] == 0xef && buffer[1] == 0xbf) {
+      //   buffer = buffer.slice(2, buffer.length)
+      // }
       console.log(buffer, '收到buffer的入口')
       let bufferData = Buffer.alloc(0);
 
