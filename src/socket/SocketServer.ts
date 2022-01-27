@@ -104,7 +104,15 @@ export default class SocketServer {
     for (let i = 0; i < bufferData.length; i++) {
       bufferData[i] ^= bufferSecret[i % bufferSecret.length]
     }
-    return JSON.parse(bufferData.toString())
+    let res = {}
+    try {
+      res = JSON.parse(bufferData.toString())
+      return res
+    } catch (e) {
+      console.log(bufferData.toString())
+      console.log(e)
+      return {}
+    }
   }
   static callMap = {};
   static sendMsg(data: DataServer) {
