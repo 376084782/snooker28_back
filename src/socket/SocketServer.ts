@@ -20,13 +20,13 @@ export default class SocketServer {
       this.io.setEncoding('utf8');
       this.io.on('ready', async () => {
         setInterval(e => { this.doHeart() }, 5000)
-        // this.getUserList(10, 1, '')
+        this.getUserList(10, 1, '')
         // this.getAvatar('2wR0NEBo2')
         // this.setUserTag('2wR0NEBo', true)
         // this.setUserInfo({
         //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
         // })
-        // this.getUserInfo('2wR0NEBo')
+        // this.getUserInfo('115')
         rsv(null)
       })
       this.listen();
@@ -37,8 +37,39 @@ export default class SocketServer {
     this.io.on('connect', (chunk) => {
       console.log('connect', chunk)
     })
+    let bufferCache = Buffer.alloc(0)
+    let bufferLen = Buffer.alloc(0);
     this.io.on('data', (chunk) => {
-      this.getMsg(chunk)
+      let buffer = Buffer.alloc(chunk.length, chunk);
+      if (buffer[0] == 0xef && buffer[1] == 0xbf) {
+        buffer = buffer.slice(2, buffer.length)
+      }
+      console.log(buffer, '收到buffer的入口')
+      let bufferData = Buffer.alloc(0);
+
+      if (bufferLen.length < 4) {
+        bufferLen = buffer.slice(0, 4)
+        bufferData = buffer.slice(4, buffer.length);
+        let len = bufferLen.readInt32LE();
+        console.log(buffer, bufferLen, len, '收到新包')
+      } else {
+        bufferData = buffer
+      }
+
+      bufferCache = Buffer.concat([bufferCache, bufferData], bufferCache.length + bufferData.length)
+
+
+      let len = bufferLen.readInt32LE();
+      console.log(buffer, bufferLen, bufferCache.length, len);
+
+
+      if (bufferCache.length >= len - 4) {
+        // 数据包长度足够
+        this.getMsg(bufferCache)
+        bufferCache = Buffer.alloc(0);
+        bufferLen = Buffer.alloc(0);
+      }
+
     })
     this.io.on('error', (e) => {
       console.log('error', e.message);
@@ -85,18 +116,7 @@ export default class SocketServer {
     return finalBuff
   }
 
-  static decode(msg: Buffer) {
-    let bufferLen = Buffer.alloc(0);
-    let bufferData = Buffer.alloc(0);
-    for (let i = 0; i < msg.length; i++) {
-      if (i < 4) {
-        let b = Buffer.alloc(1, msg[i])
-        bufferLen = Buffer.concat([bufferLen, b], bufferLen.length + b.length)
-      } else {
-        let b = Buffer.alloc(1, msg[i])
-        bufferData = Buffer.concat([bufferData, b], bufferData.length + b.length)
-      }
-    }
+  static decode(bufferData: Buffer) {
     let strSecret = 'billiards'
     // 得到两个byte数组
     let bufferSecret = Buffer.alloc(strSecret.length, strSecret)
@@ -110,8 +130,8 @@ export default class SocketServer {
       return res
     } catch (e) {
       console.warn('============JSON parse err=========================')
-      console.warn(bufferData.toString())
-      console.warn(e)
+      // console.warn(bufferData.toString())
+      // console.warn(e)
       return {}
     }
   }
@@ -231,7 +251,7 @@ export default class SocketServer {
         pageSize, page, userName
       }
     })
-    console.log(data, 'getUserList')
+    // console.log(data, 'getUserList')
     return data
   }
 
