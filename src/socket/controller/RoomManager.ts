@@ -454,7 +454,7 @@ export default class RoomManager {
   checkFinish(turnFinish) {
     let isFinish = false;
     // 15轮结束
-    let roundFinish = this.game.round >= 15;
+    let roundFinish = this.game.round > 15;
     let isLose = this.userList.filter(e => !e.isLose && this.getSumExpFirst(e.ballList) < 28).length <= 1;
     let onlyOneNotAllin = turnFinish && this.userList.filter(e => !this.roundAllIn[e.uid]).length <= 1
     isFinish = roundFinish || isLose || onlyOneNotAllin;
