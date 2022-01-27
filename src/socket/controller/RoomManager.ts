@@ -233,6 +233,7 @@ export default class RoomManager {
   flagCanDoAction = true;
   async doAction(uid, type, data?) {
     let user = this.getUserById(uid);
+    let chipBefore = this.game.chip;
 
     if (user.seat != this.game.currentSeat || !this.flagCanDoAction) {
       return
@@ -301,7 +302,7 @@ export default class RoomManager {
       'ACTION',
       {
         dataGame: this.getRoomInfo(),
-        uid, type, data
+        uid, type, data, chipBefore
       });
     this.callNextTurn(this.getNextSeat())
     let isFinish = this.checkFinish();
