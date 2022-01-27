@@ -20,7 +20,7 @@ export default class SocketServer {
       this.io.setEncoding('utf8');
       this.io.on('ready', async () => {
         setInterval(e => { this.doHeart() }, 5000)
-        this.getUserList(10, 1, '')
+        // this.getUserList(10, 1, '')
         // this.getAvatar('2wR0NEBo2')
         // this.setUserTag('2wR0NEBo', true)
         // this.setUserInfo({
