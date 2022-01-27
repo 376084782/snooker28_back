@@ -12,20 +12,19 @@ export default class SocketServer {
 
   static init() {
     return new Promise(rsv => {
-
       this.io = new net.Socket();
       // 3 链接
       this.io.connect({ port: 8888, host: '101.34.156.23' });
 
-      this.io.setEncoding('ascii');
+      this.io.setEncoding('utf8');
       this.io.on('ready', async () => {
         setInterval(e => { this.doHeart() }, 5000)
-        this.getUserList(100, 1, '')
+        // this.getUserList(100, 1, '')
         // this.getAvatar('115')
         // this.setUserTag('2wR0NEBo', true)
-        // this.setUserInfo({
-        //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
-        // })
+        this.setUserInfo({
+          uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
+        })
         // this.getUserInfo('115')
         rsv(null)
       })
@@ -43,8 +42,6 @@ export default class SocketServer {
 
       let buffer = Buffer.alloc(chunk.length, chunk);
 
-      console.log(buffer, 'buffer初始')
-
       if (bufferLen.length < 4) {
         bufferLen = buffer.slice(0, 8)
         // 得到两个byte数组
@@ -58,10 +55,8 @@ export default class SocketServer {
       bufferCache = Buffer.concat([bufferCache, buffer], bufferCache.length + buffer.length)
 
       let len = +bufferLen.toString();
-      console.log(bufferLen, bufferLen.toString(), 'buffer长度')
       if (bufferCache.length >= len) {
         // 数据包长度足够
-        console.log(bufferCache, '拿去解码')
         this.getMsg(bufferCache)
         // 解码后清空缓存的长度和数据
         bufferCache = Buffer.alloc(0);

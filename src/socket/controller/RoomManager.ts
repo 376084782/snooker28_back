@@ -18,7 +18,8 @@ export default class RoomManager {
     deskList: [],
     currentSeat: 0,
     chip: 20000,
-    timeEnd: 0
+    timeEnd: 0,
+    round: 1
   }
   roundAllIn = {}
   maxRound = 15;
@@ -317,10 +318,10 @@ export default class RoomManager {
     let timeEnd = new Date().getTime() + timeCost
     clearTimeout(this.timerNext);
     this.timerNext = setTimeout(() => {
-      // 超时自动选择不要球
+      // 超时自动选择  第一轮自动要球 之后自动不要球
       let user = this.userList.find(e => e.seat == this.game.currentSeat)
       if (user) {
-        this.doAction(user.uid, 3, { chip: this.game.chip })
+        this.doAction(user.uid, this.game.count <= this.userList.length ? 2 : 3, { chip: this.game.chip })
       }
     }, timeCost);
     this.game.currentSeat = seat;
