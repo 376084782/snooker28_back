@@ -1,11 +1,19 @@
 import API from "../api/API";
 import ModelConfigRoom from "../models/ModelConfigRoom";
+import socketManager from "../socket";
 import SocketServer from "../socket/SocketServer";
 
 var express = require("express");
 var router = express.Router();
 /* GET home page. */
 
+router.post("/hall/check_in_game", async (req, res, next) => {
+  let data = req.body;
+  let gameId: any = await socketManager.checkInGame(data.uid);
+  res.send({
+    code: 0, data: { gameId }
+  });
+});
 router.post("/server/socket/test", async (req, res, next) => {
   let data = req.body;
   let conf: any = await SocketServer.sendMsg(data);

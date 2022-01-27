@@ -69,6 +69,16 @@ export default class socketManager {
       return this.aliveRoomList.find(roomCtr => roomCtr.roomId == roomId);
     }
   }
+  static checkInGame(uid) {
+    let roomId = this.getInRoomByUid(uid);
+    let roomCtr = this.getRoomCtrByRoomId(roomId)
+    let roomInfo = roomCtr.getRoomInfo();
+    if (roomInfo && roomInfo.isInRoom) {
+      return 1
+    } else {
+      return 0
+    }
+  }
   static async onMessage(res, socket) {
     // console.log("收到消息", res);
     // 公共头
