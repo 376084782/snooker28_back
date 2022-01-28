@@ -15,7 +15,7 @@ export default class SocketServer {
       // rsv(null)
       // return;
 
-      
+
       this.io = new net.Socket();
       // 3 链接
       this.io.connect({ port: 8888, host: '101.34.156.23' });
@@ -227,7 +227,7 @@ export default class SocketServer {
     let data = await this.sendMsg({
       "method": "_SetAssets",
       "args": [],
-      "kwargs": { uid, type, gold, diamond, reason }
+      "kwargs": { uid, type, golds: gold, diamond, reason }
     })
     return data
   }
