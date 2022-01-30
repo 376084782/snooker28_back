@@ -256,7 +256,7 @@ export default class RoomManager {
       data,
       chipBefore
     });
-    await Util.delay(500);
+    await Util.delay(100);
     if (type == 1) {
       if (data.chip >= user.coin) {
         return;
@@ -294,7 +294,7 @@ export default class RoomManager {
         listNew: user.ballList,
         ballLeft: this.game.ballLeft
       });
-      await Util.delay(900);
+      await Util.delay(600);
       this.throwMoney(uid, data.chip);
       await Util.delay(200);
     } else if (type == 3) {
