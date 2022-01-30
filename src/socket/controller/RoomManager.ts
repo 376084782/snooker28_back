@@ -320,6 +320,9 @@ export default class RoomManager {
       data,
       chipBefore
     });
+    if (type == 2) {
+      await Util.delay(200);
+    }
     this.callNextTurn(this.getNextSeat());
     let isFinish = this.checkFinish(turnFinish);
     if (isFinish) {
