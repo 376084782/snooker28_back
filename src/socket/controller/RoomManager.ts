@@ -339,11 +339,7 @@ export default class RoomManager {
       // 超时自动选择  第一轮自动要球 之后自动放弃
       let user = this.userList.find(e => e.seat == this.game.currentSeat);
       if (user) {
-        this.doAction(
-          user.uid,
-          this.game.count <= this.userList.length ? 2 : 4,
-          { chip: this.game.chip }
-        );
+        this.doAction(user.uid, 4, { chip: this.game.chip });
       }
     }, timeCost);
     this.game.currentSeat = seat;
