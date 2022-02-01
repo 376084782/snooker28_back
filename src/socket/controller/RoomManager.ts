@@ -363,7 +363,9 @@ export default class RoomManager {
           return 1;
         } else if (b.ballList.length == a.ballList.length) {
           // 一样多的球 第一个球谁大就谁大
-          return b.ballList[0] > a.ballList[0] ? 1 : -1;
+          let maxB = Math.max(...b.ballList.slice(1, b.ballList.length));
+          let maxA = Math.max(...a.ballList.slice(1, a.ballList.length));
+          return maxB > maxA ? 1 : -1;
         } else {
           // B球少 B小
           return -1;
@@ -378,7 +380,10 @@ export default class RoomManager {
           if (b.ballList.length > a.ballList.length) {
             return 1;
           } else if (b.ballList.length == a.ballList.length) {
-            return b.ballList[0] > a.ballList[0] ? 1 : -1;
+            // 一样多的球 第一个球谁大就谁大
+            let maxB = Math.max(...b.ballList.slice(1, b.ballList.length));
+            let maxA = Math.max(...a.ballList.slice(1, a.ballList.length));
+            return maxB > maxA ? 1 : -1;
           } else {
             return -1;
           }
