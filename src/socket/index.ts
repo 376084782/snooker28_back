@@ -118,6 +118,9 @@ export default class socketManager {
           dataGame = roomCtr.getRoomInfo();
         }
         let userInfo = await SocketServer.getUserInfoAndFormat(uid)
+        if(!userInfo){
+          return
+        }
         this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
           userInfo: userInfo,
           dataGame
