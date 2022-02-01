@@ -26,9 +26,9 @@ export default class SocketServer {
         // this.getUserList(100, 1, '')
         // this.getAvatar('115')
         // this.setUserTag('2wR0NEBo', true)
-        this.setUserInfo({
-          uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
-        })
+        // this.setUserInfo({
+        //   uid: '2wR0NEBo', type: 'add', gold: 1, diamond: 0, reason: '测试接口'
+        // })
         // this.getUserInfo('115')
         rsv(null)
       })
