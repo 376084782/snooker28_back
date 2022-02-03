@@ -80,6 +80,6 @@ async function initUser() {
 
 const createData = async () => {
   await initRoomConfig();
-  await initUser()
+  // await initUser()
 }
 export { createData }
