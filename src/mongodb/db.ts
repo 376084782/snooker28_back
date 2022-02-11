@@ -5,9 +5,10 @@ import { createData } from './data'
 
 export const doConnectMongo = () => {
   return new Promise((rsv, rej) => {
-
     mongoose.connect('mongodb://127.0.0.1:27017/', {
-      dbName: 'snooker28'
+      dbName: 'snooker28',
+      user: 'root',
+      pass: 'Test15259980589'
     });
     const db = mongoose.connection;
 
