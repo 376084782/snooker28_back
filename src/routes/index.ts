@@ -55,4 +55,14 @@ router.post("/userinfo", async (req, res, next) => {
   res.send(result);
 });
 
+router.post("/getIsOpen", async (req, res, next) => {
+  let data = req.body;
+  res.send({ code: 0, data: socketManager.isOpen });
+});
+router.post("/toggleOpen", async (req, res, next) => {
+  let data = req.body;
+  socketManager.isOpen = !!data.isOpen;
+  res.send({ code: 0 });
+});
+
 module.exports = router;

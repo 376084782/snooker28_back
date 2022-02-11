@@ -39,6 +39,11 @@ export default class RoomManager {
     this.step = 0;
     this.resetGameInfo();
   }
+
+  showChat(uid, conf) {
+    socketManager.sendMsgByUidList(this.uidList, 'CHAT', { uid, conf });
+
+  }
   async initConfig() {
     let config = await ModelConfigRoom.findOne({ id: this.level });
 

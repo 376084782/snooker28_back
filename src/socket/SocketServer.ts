@@ -24,6 +24,7 @@ export default class SocketServer {
 
       this.io.setEncoding("utf8");
       this.io.on("ready", async () => {
+        console.log('ready')
         setInterval(e => {
           this.doHeart();
         }, 5000);

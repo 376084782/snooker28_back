@@ -6,6 +6,7 @@ import SocketServer from "./SocketServer";
 
 
 export default class socketManager {
+  static isOpen = true;
   static io;
   static userSockets = {};
   static aliveRoomList: RoomManager[] = [];
@@ -32,6 +33,7 @@ export default class socketManager {
   static removeRoom(room: RoomManager) {
     this.aliveRoomList = this.aliveRoomList.filter((ctr: RoomManager) => ctr != room);
   }
+
   // 公共错误广播
   static sendErrByUidList(uidList: number[], protocle: string, data) {
     this.sendMsgByUidList(uidList, PROTOCLE.SERVER.ERROR, {
@@ -53,7 +55,7 @@ export default class socketManager {
   static async init(io) {
     // console.log('======初始化io======')
     this.io = io;
-    await SocketServer.init()
+    // await SocketServer.init()
     this.listen();
 
   }
@@ -118,7 +120,7 @@ export default class socketManager {
           dataGame = roomCtr.getRoomInfo();
         }
         let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-        if(!userInfo){
+        if (!userInfo) {
           return
         }
         this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
@@ -178,6 +180,13 @@ export default class socketManager {
           return;
         }
         roomCtr.showBalls(uid)
+        break
+      }
+      case 'CHAT': {
+        if (!roomCtr) {
+          return;
+        }
+        roomCtr.showChat(uid, data.conf)
         break
       }
     }
