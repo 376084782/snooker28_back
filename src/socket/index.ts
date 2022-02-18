@@ -6,6 +6,7 @@ import SocketServer from "./SocketServer";
 
 
 export default class socketManager {
+  static isTest = true;
   static isOpen = true;
   static io;
   static userSockets = {};
@@ -55,7 +56,9 @@ export default class socketManager {
   static async init(io) {
     // console.log('======初始化io======')
     this.io = io;
-    await SocketServer.init()
+    if (!socketManager.isTest) {
+      await SocketServer.init()
+    }
     this.listen();
 
   }
