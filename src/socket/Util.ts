@@ -30,7 +30,6 @@ export default class Util {
           str += chunk; //监听数据响应，拼接数据片段
         });
         data.on("end", function () {
-          // console.log(str, url)
           try {
             data = JSON.parse(str);
           } catch (err) { }

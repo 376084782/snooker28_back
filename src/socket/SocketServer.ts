@@ -25,7 +25,6 @@ export default class SocketServer {
 
       this.io.setEncoding("utf8");
       this.io.on("ready", async () => {
-        console.log('ready')
         setInterval(e => {
           this.doHeart();
         }, 5000);
@@ -43,7 +42,8 @@ export default class SocketServer {
   }
   static listen() {
     this.io.on("connect", chunk => {
-      console.log("connect", chunk);
+      console.log("SocketServer连接成功");
+
     });
     let bufferCache = Buffer.alloc(0);
     let bufferLen = Buffer.alloc(0);
@@ -75,13 +75,12 @@ export default class SocketServer {
       }
     });
     this.io.on("error", e => {
-      console.log("error", e.message);
+      console.log("SocketServer连接出错", e.message);
     });
     this.io.on("drain", e => {
-      console.log("drain", e);
     });
     this.io.on("close", e => {
-      console.log("close", e);
+      console.log("SocketServer关闭");
     });
   }
 
@@ -149,7 +148,7 @@ export default class SocketServer {
       let callName = `snooker28_${Util.getUniqId()}`;
       data.kwargs["callback"] = callName;
       if (data.method != "_heartbeat") {
-        console.log(data, "发送数据");
+        console.log("请求SocketServer：", data);
       }
       this.callMap[callName] = e => {
         if (e.code == 0) {
@@ -179,7 +178,6 @@ export default class SocketServer {
         flag
       }
     });
-    console.log(data, "setUserTag");
     return data;
   }
   static async getUserInfoAndFormat(uid) {
@@ -203,7 +201,7 @@ export default class SocketServer {
     })) as any;
     if (!data.assets) {
       return false;
-    } else{
+    } else {
       return {
         // 拥有的金币
         coin: data.assets.golds,
@@ -227,7 +225,6 @@ export default class SocketServer {
         uid
       }
     });
-    console.log(data, "getUserInfo");
     return data;
   }
   static async setUserInfo({ uid, type, gold, diamond, reason }) {
@@ -254,7 +251,6 @@ export default class SocketServer {
         uid
       }
     });
-    console.log(data, "getAvatar");
     return data;
   }
   static async getUserList(pageSize, page, userName) {
@@ -267,13 +263,12 @@ export default class SocketServer {
         userName
       }
     });
-    console.log(data, "getUserList");
     return data;
   }
 
   static getMsg(msg: Buffer) {
     let res: any = this.decode(msg);
-    console.log(res, "收到数据");
+    console.log("SocketServer返回：", res);
     if (res.method) {
       let func = this.callMap[res.method];
       let data = res.kwargs;
@@ -281,7 +276,7 @@ export default class SocketServer {
     } else {
     }
   }
-  static async onMessage(res, socket) {}
-  static onDisconnect(socket) {}
-  static onConnect(socket) {}
+  static async onMessage(res, socket) { }
+  static onDisconnect(socket) { }
+  static onConnect(socket) { }
 }

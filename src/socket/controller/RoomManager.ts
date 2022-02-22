@@ -79,18 +79,21 @@ export default class RoomManager {
   // 玩家加入
   async join(userInfo) {
     if (userInfo.coin > this.config.max) {
+      console.log(`${userInfo.uid}金币大于该房间上限，无法加入`)
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "金币大于该房间上限"
       });
       return;
     }
     if (userInfo.coin < this.config.min) {
+      console.log(`${userInfo.uid}金币不足，无法加入`)
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "金币不足"
       });
       return;
     }
     if (this.uidList.indexOf(userInfo.uid) > -1) {
+      console.log(`${userInfo.uid}已经在房间里，无法重复加入`)
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "玩家已经在房间内"
       });
@@ -98,6 +101,7 @@ export default class RoomManager {
     }
     let blankSeat = this.getBlankSeat();
     if (blankSeat == 0) {
+      console.log(`房间已满员，${userInfo.uid}无法加入`)
       socketManager.sendErrByUidList([userInfo.uid], "match", {
         msg: "房间已满"
       });
@@ -137,6 +141,7 @@ export default class RoomManager {
     // return
     this.timerJoin[uid] = setTimeout(() => {
       // 十秒内不准备，踢出房间
+      console.log(`${uid}10s不准备，被t出房间`)
       this.leave(uid);
     }, 10000);
   }
@@ -149,6 +154,7 @@ export default class RoomManager {
     let userInfo = this.getUserById(uid);
     if (userInfo) {
       userInfo.ready = flag;
+      console.log(`${uid}切换准备态：`, flag)
       socketManager.sendMsgByUidList(
         this.uidList,
         PROTOCLE.SERVER.ROOM_USER_UPDATE,
@@ -218,6 +224,10 @@ export default class RoomManager {
     });
     this.game.chip = this.config.basicChip;
 
+    console.log('开始游戏，当前游戏中玩家:', this.uidList)
+    this.userList.forEach(e => {
+      console.log(`${e.uid}当前金币数量:`, e.coin)
+    })
     for (let i = 0; i < this.userList.length; i++) {
       let user = this.userList[i];
       this.changeMoney(user.uid, -this.config.teaMoney);
@@ -233,6 +243,7 @@ export default class RoomManager {
       for (let i = 0; i < this.userList.length; i++) {
         let user = this.userList[i];
         this.throwMoney(user.uid, this.config.basicChip);
+        console.log(`开始游戏，扣除${user.uid}底注${this.config.basicChip}金币`)
       }
       setTimeout(() => {
         this.flagCanDoAction = true;
@@ -253,7 +264,6 @@ export default class RoomManager {
       return;
     }
     this.flagCanDoAction = false;
-
     user.lastAction = type;
     socketManager.sendMsgByUidList(this.uidList, "ACTION_SOUND", {
       uid,
@@ -271,8 +281,8 @@ export default class RoomManager {
       this.throwMoney(uid, data.chip);
     } else if (type == 2) {
       this.game.chip = data.chip;
-
       if (this.game.ballLeft.length <= 0) {
+        console.log(`${uid}请求要球，但是当前游戏没有剩余球了，失败`)
         return;
       }
       // 要球
@@ -290,6 +300,9 @@ export default class RoomManager {
             }
           }
         }
+        console.log(`${uid}执行要球，且有高概率标签`)
+      } else {
+        console.log(`${uid}执行要球，且无高概率标签`)
       }
       let ball = this.game.ballLeft.splice(ballIdx, 1)[0];
       user.ballList.push(ball);
@@ -300,16 +313,21 @@ export default class RoomManager {
         ballLeft: this.game.ballLeft
       });
       await Util.delay(600);
+      console.log(`${uid}扣除要球消耗的金币${data.chip}`)
       this.throwMoney(uid, data.chip);
       await Util.delay(200);
     } else if (type == 3) {
       this.game.chip = data.chip;
       // 不要球
+      console.log(`${uid}请求不要球`)
       this.throwMoney(uid, data.chip);
+      console.log(`${uid}扣除不要球消耗的金币${data.chip}，并执行不要球操作`)
     } else if (type == 4) {
       // 放弃
+      console.log(`${uid}请求放弃`)
       user.isLose = true;
       socketManager.sendMsgByUidList(this.uidList, "GIVEUP", { uid });
+      console.log(`${uid}执行放弃操作`)
     }
     this.game.count++;
     if (this.game.count >= this.game.countInRound) {
@@ -329,7 +347,7 @@ export default class RoomManager {
       await Util.delay(200);
     }
     this.callNextTurn(this.getNextSeat());
-    let isFinish = this.checkFinish(turnFinish);
+    let isFinish = await this.checkFinish(turnFinish);
     if (isFinish) {
     } else {
       await Util.delay(200);
@@ -340,15 +358,15 @@ export default class RoomManager {
     let timeCost = 15000;
     let timeEnd = new Date().getTime() + timeCost;
     clearTimeout(this.timerNext);
+    let user = this.userList.find(e => e.seat == this.game.currentSeat);
     this.timerNext = setTimeout(() => {
       // 超时自动选择  第一轮自动要球 之后自动放弃
-      let user = this.userList.find(e => e.seat == this.game.currentSeat);
-      if (user) {
-        this.doAction(user.uid, 4, { chip: this.game.chip });
-      }
+      this.doAction(user.uid, 4, { chip: this.game.chip });
+
     }, timeCost);
     this.game.currentSeat = seat;
     this.game.timeEnd = timeEnd;
+    console.log(`轮转到${user.uid}执行操作`)
     socketManager.sendMsgByUidList(this.uidList, "POWER", {
       timeEnd,
       currentSeat: this.game.currentSeat,
@@ -447,7 +465,7 @@ export default class RoomManager {
       return;
     }
     this.ballsOpen = true;
-    console.log("SHOW_BALLS");
+    console.log(`${uid}亮球`)
     socketManager.sendMsgByUidList(this.uidListLastRound, "SHOW_BALLS", {
       winner: this.winner,
       dataGame: this.getRoomInfo()
@@ -465,7 +483,7 @@ export default class RoomManager {
       e => !e.isLose && this.getSumExpFirst(e.ballList) < 28
     );
   }
-  checkFinish(turnFinish) {
+  async checkFinish(turnFinish) {
     let isFinish = false;
     // 15轮结束
     let roundFinish = this.game.round > 15;
@@ -480,6 +498,13 @@ export default class RoomManager {
     if (!isFinish) {
       return false;
     }
+    if (roundFinish) {
+      console.log('15轮结束，结算')
+    } else if (isLose) {
+      console.log('只剩一个人没有认输，结算')
+    } else if (onlyOneNotAllin) {
+      console.log('只剩一个人没有allin，结算')
+    }
     this.uidListLastRound = [].concat(this.uidList);
     // 排除掉认输或者公开球爆点的
     let listSort = this.sort(
@@ -488,7 +513,6 @@ export default class RoomManager {
         return sum < 28 && !e.isLose;
       })
     );
-    // let listSort = this.sort(this.userList)
     let winnerUser = listSort[0];
     let uu2 = listSort[1];
     let winner = {
@@ -498,19 +522,13 @@ export default class RoomManager {
       mapGain: {}
     };
     this.winner = winner;
-    console.log(listSort, "listSort");
-
+    console.log('最终球排序:', listSort);
     let roundAllIn1 = this.roundAllIn[winner.uid];
-    console.log(roundAllIn1, "roundAllIn1");
     let chipTotalInDesk = this.getDeskAll();
     if (roundAllIn1) {
       // 赢家allin 剩余两家大的拿剩下的钱
       let max1 = this.getSumUntilRound(0, roundAllIn1);
       let chipLeft = chipTotalInDesk - max1;
-      console.log(max1, chipTotalInDesk, chipLeft, roundAllIn1, "===");
-      for (let i = 0; i < this.game.round; i++) {
-        console.log(this.getSumUntilRound(0, i));
-      }
       // 先给赢家能拿的最大金额
       // 多出来的钱继续pk
       if (chipLeft > 0 && uu2) {
@@ -530,13 +548,15 @@ export default class RoomManager {
     }
     this.resetGameInfo();
     for (let uu in winner.mapGain) {
-      this.changeMoney(uu, winner.mapGain[uu]);
+      await this.changeMoney(uu, winner.mapGain[uu]);
     }
     socketManager.sendMsgByUidList(this.uidListLastRound, "FINISH", {
       winner,
       dataGame: this.getRoomInfo()
     });
-
+    this.userList.forEach(e => {
+      console.log(`${e.uid}当前金币数量:`, e.coin)
+    })
     return true;
   }
   async throwMoney(uid, num) {

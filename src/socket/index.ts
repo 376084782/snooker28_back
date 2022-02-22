@@ -54,7 +54,6 @@ export default class socketManager {
     });
   }
   static async init(io) {
-    // console.log('======初始化io======')
     this.io = io;
     if (!socketManager.isTest) {
       await SocketServer.init()
@@ -85,7 +84,6 @@ export default class socketManager {
     }
   }
   static async onMessage(res, socket) {
-    // console.log("收到消息", res);
     // 公共头
     let uid = res.uid;
     if (!uid) {
@@ -198,7 +196,7 @@ export default class socketManager {
     // 通过socket反查用户，将用户数据标记为断线
     for (let uid in this.userSockets) {
       if (this.userSockets[uid] == socket) {
-        console.log('用户uid掉线,取消匹配')
+        console.log(`用户${uid}掉线`)
         // 踢出用户
         let roomId = this.getInRoomByUid(uid);
         let roomCtr = this.getRoomCtrByRoomId(roomId);
