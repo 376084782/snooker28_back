@@ -6,7 +6,7 @@ import SocketServer from "./SocketServer";
 
 
 export default class socketManager {
-  static isTest = true;
+  static isTest = false;
   static isOpen = true;
   static io;
   static userSockets = {};
