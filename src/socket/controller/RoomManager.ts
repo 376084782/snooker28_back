@@ -366,7 +366,9 @@ export default class RoomManager {
     }, timeCost);
     this.game.currentSeat = seat;
     this.game.timeEnd = timeEnd;
-    console.log(`轮转到${user.uid}执行操作`)
+    if (user) {
+      console.log(`轮转到${user.uid}执行操作`)
+    }
     socketManager.sendMsgByUidList(this.uidList, "POWER", {
       timeEnd,
       currentSeat: this.game.currentSeat,
