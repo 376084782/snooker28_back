@@ -228,10 +228,12 @@ export default class RoomManager {
     this.userList.forEach(e => {
       console.log(`${e.uid}当前金币数量:`, e.coin)
     })
+    console.log('开始结算', new Date().getTime())
     for (let i = 0; i < this.userList.length; i++) {
       let user = this.userList[i];
-      this.changeMoney(user.uid, -this.config.teaMoney);
+      await this.changeMoney(user.uid, -this.config.teaMoney);
     }
+    console.log('结算金币扣除完成', new Date().getTime())
     // 随机开始座位
     socketManager.sendMsgByUidList(this.uidList, "START_GAME", {
       chip: this.config.basicChip,
@@ -550,7 +552,7 @@ export default class RoomManager {
     }
     this.resetGameInfo();
     for (let uu in winner.mapGain) {
-      await this.changeMoney(uu, winner.mapGain[uu]);
+      this.changeMoney(uu, winner.mapGain[uu]);
     }
     socketManager.sendMsgByUidList(this.uidListLastRound, "FINISH", {
       winner,
