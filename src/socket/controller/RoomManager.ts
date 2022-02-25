@@ -358,14 +358,13 @@ export default class RoomManager {
     let timeCost = 15000;
     let timeEnd = new Date().getTime() + timeCost;
     clearTimeout(this.timerNext);
+    this.game.currentSeat = seat;
+    this.game.timeEnd = timeEnd;
     let user = this.userList.find(e => e.seat == this.game.currentSeat);
     this.timerNext = setTimeout(() => {
       // 超时自动选择  第一轮自动要球 之后自动放弃
       this.doAction(user.uid, 4, { chip: this.game.chip });
-
     }, timeCost);
-    this.game.currentSeat = seat;
-    this.game.timeEnd = timeEnd;
     if (user) {
       console.log(`轮转到${user.uid}执行操作`)
     }
