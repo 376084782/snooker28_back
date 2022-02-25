@@ -207,7 +207,7 @@ export default class SocketServer {
         uid
       }
     })) as any;
-    if (!data.assets) {
+    if (!data || !data.assets) {
       return false;
     } else {
       return {
