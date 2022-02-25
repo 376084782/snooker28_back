@@ -49,6 +49,12 @@ router.post("/user/toggleCheat", async (req, res, next) => {
   res.send({ code: 0 });
 });
 
+router.get("/avatar", async (req, res, next) => {
+  let data = req.query;
+  let result = (await SocketServer.getAvatar(data.uid)) as any;
+  res.send(result);
+});
+
 router.post("/userinfo", async (req, res, next) => {
   let data = req.body;
   let result = (await API.getUserInfo(data.uid)) as any;
