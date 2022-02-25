@@ -28,14 +28,6 @@ export default class SocketServer {
         setInterval(e => {
           this.doHeart();
         }, 5000);
-        this.sendMsg({
-          "method": "Player/user.SetAvatar",
-          "args": [],
-          "kwargs": {
-            'headimg': '1',
-            "entityKey": "EquFxJ9z"
-          }
-        })
         // this.getUserList(100, 1, '')
         // this.getAvatar('115')
         // this.setUserTag('2wR0NEBo', true)
