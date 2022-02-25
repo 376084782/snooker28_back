@@ -22,7 +22,7 @@ export default class SocketServer {
       // 3 链接
       // this.io.connect({ port: 8884, host: "18.163.61.228" });
       // this.io.connect({ port: 8884, host: "212.129.234.189" });
-      this.io.connect({ port: 8884, host: "localhost" });
+      this.io.connect({ port: 8884, host: "127.0.0.1" });
 
       this.io.setEncoding("utf8");
       this.io.on("ready", async () => {
