@@ -21,7 +21,8 @@ export default class SocketServer {
       this.io = new net.Socket();
       // 3 链接
       // this.io.connect({ port: 8884, host: "18.163.61.228" });
-      this.io.connect({ port: 8884, host: "212.129.234.189" });
+      // this.io.connect({ port: 8884, host: "212.129.234.189" });
+      this.io.connect({ port: 8884, host: "localhost" });
 
       this.io.setEncoding("utf8");
       this.io.on("ready", async () => {
