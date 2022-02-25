@@ -142,13 +142,16 @@ export default class SocketServer {
       return {};
     }
   }
+  static timeMap = {}
   static callMap = {};
   static sendMsg(data: DataServer) {
     return new Promise((rsv, rej) => {
-      let callName = `snooker28_${Util.getUniqId()}`;
+      let callId = Util.getUniqId();
+      let callName = `snooker28_${callId}`;
+      this.timeMap[callName] = new Date().getTime()
       data.kwargs["callback"] = callName;
       if (data.method != "_heartbeat") {
-        console.log("请求SocketServer：", data);
+        console.log(`请求SocketServer`, data,);
       }
       this.callMap[callName] = e => {
         if (e.code == 0) {
@@ -268,7 +271,8 @@ export default class SocketServer {
 
   static getMsg(msg: Buffer) {
     let res: any = this.decode(msg);
-    console.log("SocketServer返回：", res);
+    let timeStart = this.timeMap[res.method]
+    console.log(`SocketServer返回,耗时${new Date().getTime() - timeStart}`, res);
     if (res.method) {
       let func = this.callMap[res.method];
       let data = res.kwargs;
