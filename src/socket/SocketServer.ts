@@ -152,7 +152,7 @@ export default class SocketServer {
       }
       this.callMap[callName] = e => {
         if (e.code == 0) {
-          rsv(e.data);
+          rsv(e.data || e);
         } else {
           rej(e);
         }
