@@ -57,10 +57,36 @@ export default class RoomManager {
       max: config.max
     };
   }
+  doConnect(uid) {
+    let user = this.userList.find(e => e.uid == uid);
+    if (user.isDisConnected) {
+      user.isDisConnected = false;
+      socketManager.sendMsgByUidList(
+        this.uidList,
+        PROTOCLE.SERVER.ROOM_USER_UPDATE,
+        {
+          userList: this.userList
+        }
+      );
+    }
 
+  }
+  userDisconnectInGame(uid) {
+    let user = this.userList.find(e => e.uid == uid);
+    user.isDisConnected = true;
+    socketManager.sendMsgByUidList(
+      this.uidList,
+      PROTOCLE.SERVER.ROOM_USER_UPDATE,
+      {
+        userList: this.userList
+      }
+    );
+
+  }
   // 玩家离开
   leave(uid) {
     if (this.step > 0) {
+      this.userDisconnectInGame(uid)
       return;
     }
     clearTimeout(this.timerJoin[uid]);
@@ -354,6 +380,7 @@ export default class RoomManager {
       this.flagCanDoAction = true;
     }
   }
+  uidsAutoGiveup = []
   callNextTurn(seat) {
     let timeCost = 15000;
     let timeEnd = new Date().getTime() + timeCost;
@@ -361,9 +388,20 @@ export default class RoomManager {
     this.game.currentSeat = seat;
     this.game.timeEnd = timeEnd;
     let user = this.userList.find(e => e.seat == this.game.currentSeat);
-    this.timerNext = setTimeout(() => {
+    this.timerNext = setTimeout(async () => {
       // 超时自动选择  第一轮自动要球 之后自动放弃
-      this.doAction(user.uid, 4, { chip: this.game.chip });
+      if (user.isDisConnected) {
+        console.log(`玩家${user.uid}操作超时时，正好掉线了，多等10s`)
+        // 如果当时正好断线了，多等10s
+        clearTimeout(this.timerNext);
+        this.timerNext = setTimeout(() => {
+          console.log(`玩家${user.uid}掉线后10s倒计时结束，自动放弃`)
+          this.doAction(user.uid, 4, { chip: this.game.chip });
+        }, 10 * 1000);
+      } else {
+        console.log(`玩家${user.uid}操作超时，自动放弃`)
+        this.doAction(user.uid, 4, { chip: this.game.chip });
+      }
     }, timeCost);
     if (user) {
       console.log(`轮转到${user.uid}执行操作`)
@@ -374,6 +412,7 @@ export default class RoomManager {
       chip: this.game.chip
     });
   }
+  timestampNext = 0;
   timerNext = null;
   sort(list) {
     return list.sort((a, b) => {
@@ -587,6 +626,10 @@ export default class RoomManager {
   async changeMoney(uid, num) {
     // 修改玩家金币
     let dataUser = this.userList.find(e => e.uid == uid);
+    if (!dataUser) {
+      console.log('异常：未查找到玩家信息', uid)
+      return
+    }
     dataUser.coin += num;
     if (dataUser.coin < 0) {
       // 二次防止金币扣成负数

@@ -10,6 +10,7 @@ export default class socketManager {
   static isOpen = true;
   static io;
   static userSockets = {};
+  static userPings = {};
   static aliveRoomList: RoomManager[] = [];
   static userMap = {};
   static async getRoomCanJoin({ level }) {
@@ -100,8 +101,12 @@ export default class socketManager {
     }
     this.userSockets[uid] = socket;
 
+
     let roomId = this.getInRoomByUid(uid);
     let roomCtr = this.getRoomCtrByRoomId(roomId);
+    if (roomCtr) {
+      roomCtr.doConnect(uid)
+    }
 
     switch (type) {
       case PROTOCLE.CLIENT.EXIT: {
@@ -158,6 +163,7 @@ export default class socketManager {
         this.sendMsgByUidList([uid], PROTOCLE.SERVER.PING, {
           timestamp: data.timestamp
         });
+        this.userPings[uid] = data.timestamp
         break;
       }
       case 'READY': {
@@ -192,21 +198,40 @@ export default class socketManager {
       }
     }
   }
-  static onDisconnect(socket) {
-    // 通过socket反查用户，将用户数据标记为断线
-    for (let uid in this.userSockets) {
-      if (this.userSockets[uid] == socket) {
-        console.log(`用户${uid}掉线`)
-        // 踢出用户
-        let roomId = this.getInRoomByUid(uid);
-        let roomCtr = this.getRoomCtrByRoomId(roomId);
-        if (roomCtr) {
-          roomCtr.leave(uid);
+  static autoCheckDisConnected() {
+    let t = new Date().getTime();
+    for (let uid in this.userPings) {
+      // 3s没有收到ping就判定为断开连接，强制触发一次重连
+      let tLast = this.userPings[uid]
+      if (tLast && t - tLast > 5000) {
+        if (this.userSockets[uid]) {
+          console.log(`${uid}连接异常，5s未收到ping，服务器主动断开`)
+          this.userSockets[uid].disconnect();
+          this.userPings[uid] = 0
         }
       }
     }
   }
+  static onDisconnect(socket) {
+    // 通过socket反查用户，将用户数据标记为断线
+    for (let uid in this.userSockets) {
+      if (this.userSockets[uid] == socket) {
+        // 踢出用户
+        let roomId = this.getInRoomByUid(uid);
+        console.log(roomId, 'roomId')
+        let roomCtr = this.getRoomCtrByRoomId(roomId);
+        if (roomCtr) {
+          console.log('uid断开连接', uid)
+          roomCtr.leave(uid);
+        }
+        this.userSockets[uid] = undefined
+      }
+    }
+  }
   static onConnect(socket) {
+    setInterval(e => {
+      socketManager.autoCheckDisConnected()
+    }, 1000)
     socket.on('disconnect', () => {
       socketManager.onDisconnect(socket)
     });

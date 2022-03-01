@@ -146,6 +146,10 @@ export default class SocketServer {
   static callMap = {};
   static sendMsg(data: DataServer) {
     return new Promise((rsv, rej) => {
+      if (!this.io) {
+        rsv({ code: -1 })
+        return
+      }
       let callId = Util.getUniqId();
       let callName = `snooker28_${callId}`;
       this.timeMap[callName] = new Date().getTime()
