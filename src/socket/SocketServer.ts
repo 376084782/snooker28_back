@@ -234,7 +234,7 @@ export default class SocketServer {
     });
     return data;
   }
-  static async setUserInfo({ uid, type, gold, diamond, reason }) {
+  static async setUserInfo({ uid, type, gold, diamond, reason, tag }) {
     if (!this.io) {
       let user = await ModelUser.findOne({ uid });
       let data = await ModelUser.updateOne(
@@ -246,7 +246,7 @@ export default class SocketServer {
     let data = await this.sendMsg({
       method: "_SetAssets",
       args: [],
-      kwargs: { uid, type, golds: gold, diamond, reason }
+      kwargs: { uid, type, golds: gold, diamond, reason, tag }
     });
     return data;
   }
