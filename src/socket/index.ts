@@ -225,12 +225,13 @@ export default class socketManager {
           roomCtr.leave(uid);
         }
         this.userSockets[uid] = undefined
+        this.userPings[uid] = 0
       }
     }
   }
   static onConnect(socket) {
     setInterval(e => {
-      socketManager.autoCheckDisConnected()
+      // socketManager.autoCheckDisConnected()
     }, 1000)
     socket.on('disconnect', () => {
       socketManager.onDisconnect(socket)
