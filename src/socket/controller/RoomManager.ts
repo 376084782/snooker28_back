@@ -59,7 +59,7 @@ export default class RoomManager {
   }
   doConnect(uid) {
     let user = this.userList.find(e => e.uid == uid);
-    if (user.isDisConnected) {
+    if (user && user.isDisConnected) {
       user.isDisConnected = false;
       socketManager.sendMsgByUidList(
         this.uidList,
@@ -73,14 +73,16 @@ export default class RoomManager {
   }
   userDisconnectInGame(uid) {
     let user = this.userList.find(e => e.uid == uid);
-    user.isDisConnected = true;
-    socketManager.sendMsgByUidList(
-      this.uidList,
-      PROTOCLE.SERVER.ROOM_USER_UPDATE,
-      {
-        userList: this.userList
-      }
-    );
+    if (user) {
+      user.isDisConnected = true;
+      socketManager.sendMsgByUidList(
+        this.uidList,
+        PROTOCLE.SERVER.ROOM_USER_UPDATE,
+        {
+          userList: this.userList
+        }
+      );
+    }
 
   }
   // 玩家离开
@@ -392,7 +394,7 @@ export default class RoomManager {
     let user = this.userList.find(e => e.seat == this.game.currentSeat);
     this.timerNext = setTimeout(async () => {
       // 超时自动选择  第一轮自动要球 之后自动放弃
-      if (user.isDisConnected) {
+      if (user && user.isDisConnected) {
         console.log(`玩家${user.uid}操作超时时，正好掉线了，多等10s`)
         // 如果当时正好断线了，多等10s
         clearTimeout(this.timerNext);
