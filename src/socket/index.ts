@@ -6,7 +6,7 @@ import SocketServer from "./SocketServer";
 
 
 export default class socketManager {
-  static isTest = false;
+  static isTest = true;
   static isOpen = true;
   static io;
   static userSockets = {};
@@ -47,15 +47,21 @@ export default class socketManager {
     userList.forEach(uid => {
       let socket = this.userSockets[uid];
       if (socket) {
-        socket.emit("message", {
+        let res = {
           type,
           data
-        });
+        };
+        let resBuffer = SocketServer.encode(res, false);
+        // let res2=SocketServer.decode(resBuffer,false)
+        // console.log(res2,'发送消息！！！')
+        socket.emit("message", resBuffer);
       }
     });
   }
   static async init(io) {
     this.io = io;
+    // let str = decodeURIComponent('%17%00%080%11WJ%1C%03%1B%08#J%08%16Y')
+    // SocketServer.decode(Buffer.alloc(str.length, str))
     if (!socketManager.isTest) {
       await SocketServer.init()
     }
@@ -84,7 +90,8 @@ export default class socketManager {
       return 0
     }
   }
-  static async onMessage(res, socket) {
+  static async onMessage(res1, socket) {
+    let res: any = SocketServer.decode(res1, false)
     // 公共头
     let uid = res.uid;
     if (!uid) {

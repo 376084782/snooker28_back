@@ -259,6 +259,7 @@ export default class RoomManager {
     for (let i = 0; i < this.userList.length; i++) {
       let user = this.userList[i];
       this.changeMoney(user.uid, -this.config.teaMoney, 30002);
+      console.log(`扣除${user.uid}茶水费${this.config.teaMoney}金币`)
     }
     // 随机开始座位
     socketManager.sendMsgByUidList(this.uidList, "START_GAME", {

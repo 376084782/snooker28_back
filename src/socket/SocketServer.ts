@@ -1,3 +1,4 @@
+import socketManager from ".";
 import ModelUser from "../models/ModelUser";
 import Util from "./Util";
 
@@ -43,36 +44,18 @@ export default class SocketServer {
   static listen() {
     this.io.on("connect", chunk => {
       console.log("SocketServer连接成功");
-
+      this.sendMsg({
+        method: 'RegisterService', kwargs: { name: 'Snooker28' }
+      })
     });
-    let bufferCache = Buffer.alloc(0);
-    let bufferLen = Buffer.alloc(0);
     this.io.on("data", chunk => {
       let buffer = Buffer.alloc(chunk.length, chunk);
-
-      if (bufferLen.length < 4) {
-        bufferLen = buffer.slice(0, 8);
-        // 得到两个byte数组
-        let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret);
-        // 俩数组去异或
-        for (let i = 0; i < bufferLen.length; i++) {
-          bufferLen[i] ^= bufferSecret[i % bufferSecret.length];
-        }
+      this.bufferCache = Buffer.concat([this.bufferCache, buffer],
+        this.bufferCache.length + buffer.length)
+      while (this.doCheckData()) {
+        console.log('========数据包长度足够，解包========')
       }
-
-      bufferCache = Buffer.concat(
-        [bufferCache, buffer],
-        bufferCache.length + buffer.length
-      );
-
-      let len = +bufferLen.toString();
-      if (bufferCache.length >= len) {
-        // 数据包长度足够
-        this.getMsg(bufferCache);
-        // 解码后清空缓存的长度和数据
-        bufferCache = Buffer.alloc(0);
-        bufferLen = Buffer.alloc(0);
-      }
+      console.log('========单次解包完成========')
     });
     this.io.on("error", e => {
       console.log("SocketServer连接出错", e.message);
@@ -83,7 +66,31 @@ export default class SocketServer {
       console.log("SocketServer关闭");
     });
   }
+  static bufferCache: Buffer;
+  static doCheckData() {
+    if (this.bufferCache.length <= 8) {
+      return false
+    }
+    let bufferLen = this.bufferCache.slice(0, 8);
+    // 得到两个byte数组
+    let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret);
+    // 俩数组去异或
+    for (let i = 0; i < bufferLen.length; i++) {
+      bufferLen[i] ^= bufferSecret[i % bufferSecret.length];
+    }
+    let len = +bufferLen.toString();
 
+    let bufferData = this.bufferCache.slice(8, this.bufferCache.length)
+    if (bufferData.length >= len) {
+      // 数据包长度足够
+      this.getMsg(bufferData.slice(0, len));
+      // 解码后清空缓存的长度和数据
+      this.bufferCache = this.bufferCache.slice(len + 8, this.bufferCache.length);
+      return true
+    } else {
+      return false
+    }
+  }
   static getBytesLength(str) {
     var totalLength = 0;
     var charCode;
@@ -102,7 +109,7 @@ export default class SocketServer {
     return totalLength;
   }
 
-  static encode(data = {}) {
+  static encode(data = {}, withLen = true) {
     let strJson = JSON.stringify(data);
     let strSecret = "billiards";
     // 得到两个byte数组
@@ -113,24 +120,28 @@ export default class SocketServer {
       buffer[i] ^= bufferSecret[i % bufferSecret.length];
     }
     // 在最前面写入长度
-    let lenBuffer = Buffer.alloc(4);
-    lenBuffer.writeUInt32LE(buffer.length);
-    let finalBuff = Buffer.concat(
-      [lenBuffer, buffer],
-      lenBuffer.length + buffer.length
-    );
-    return finalBuff;
+    if (withLen) {
+      let lenBuffer = Buffer.alloc(4);
+      lenBuffer.writeUInt32LE(buffer.length);
+      let finalBuff = Buffer.concat(
+        [lenBuffer, buffer],
+        lenBuffer.length + buffer.length
+      );
+      return finalBuff;
+    } else {
+      return buffer;
+    }
   }
 
   static strSecret = "billiards";
-  static decode(bufferData: Buffer) {
+  static decode(bufferData: Buffer, withLen = true) {
     // 得到两个byte数组
     let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret);
     // 俩数组去异或
     for (let i = 0; i < bufferData.length; i++) {
       bufferData[i] ^= bufferSecret[i % bufferSecret.length];
     }
-    let str = bufferData.slice(8, bufferData.length);
+    let str = bufferData.slice(withLen ? 8 : 0, bufferData.length);
     let res = {};
     try {
       res = JSON.parse(str.toString());
@@ -281,6 +292,14 @@ export default class SocketServer {
       let func = this.callMap[res.method];
       let data = res.kwargs;
       func && func(data);
+      if (res.method == 'CheckInGame') {
+        let { uid, client_id } = data;
+        let roomId = socketManager.getInRoomByUid(uid);
+        // 查询玩家是否在游戏中
+        this.sendMsg({
+          method: 'CheckInGame', kwargs: { name: roomId ? 'Snooker28' : '' }
+        })
+      }
     } else {
     }
   }
