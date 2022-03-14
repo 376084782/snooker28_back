@@ -131,13 +131,14 @@ export default class socketManager {
       }
       case PROTOCLE.CLIENT.RECONNECT: {
         // 检测重连数据
-        let { session_key, client_id, uid } = data
+        let { session_key, client_id: sClient_id, uid } = data
         let dataGame: any = {
           isMatch: data.isMatch
         };
-        console.log('登录', session_key, client_id, uid)
+        console.log("data", data)
+        console.log('登录', session_key, sClient_id, uid)
         SocketServer.doLogin({
-          session_key, client_id, uid
+          session_key, client_id: sClient_id, uid
         }).then(async e => {
           if (roomCtr) {
             // 获取游戏数据并返回
