@@ -79,10 +79,11 @@ export default class SocketServer {
       bufferLen[i] ^= bufferSecret[i % bufferSecret.length];
     }
     let len = +bufferLen.toString();
-    console.log(len,'长度')
+    console.log(len, '长度')
     let bufferData = this.bufferCache.slice(8, this.bufferCache.length)
     if (bufferData.length >= len) {
       // 数据包长度足够
+      console.log('数据包长度足够')
       this.getMsg(bufferData.slice(0, len));
       // 解码后清空缓存的长度和数据
       this.bufferCache = this.bufferCache.slice(len + 8, this.bufferCache.length);
