@@ -338,7 +338,7 @@ export default class RoomManager {
       user.ballList.push(ball);
       for (let i = 0; i < this.uidList.length; i++) {
         let uu = this.uidList[i]
-        let listNew = user.ballList;
+        let listNew = user.ballList.concat();
         if (uu != uid) {
           listNew.forEach((num, idx) => {
             if (idx > 0) {
