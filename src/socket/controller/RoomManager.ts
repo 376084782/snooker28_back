@@ -339,13 +339,13 @@ export default class RoomManager {
       for (let i = 0; i < this.uidList.length; i++) {
         let uu = this.uidList[i]
         let listNew = user.ballList.concat();
-        if (uu != uid) {
-          listNew.forEach((num, idx) => {
-            if (idx > 0) {
-              listNew[idx] = 99
-            }
-          })
-        }
+        // if (uu != uid) {
+        //   listNew.forEach((num, idx) => {
+        //     if (idx > 0) {
+        //       listNew[idx] = 99
+        //     }
+        //   })
+        // }
         socketManager.sendMsgByUidList([uu], "GET_BALL", {
           ball,
           uid,
