@@ -131,22 +131,31 @@ export default class socketManager {
       }
       case PROTOCLE.CLIENT.RECONNECT: {
         // 检测重连数据
+        let { session_key, client_id, uid } = data
         let dataGame: any = {
           isMatch: data.isMatch
         };
+        console.log('登录', session_key, client_id, uid)
+        SocketServer.doLogin({
+          session_key, client_id, uid
+        }).then(async e => {
+          if (roomCtr) {
+            // 获取游戏数据并返回
+            dataGame = roomCtr.getRoomInfo();
+          }
+          let userInfo = await SocketServer.getUserInfoAndFormat(uid)
+          if (!userInfo) {
+            return
+          }
+          this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
+            userInfo: userInfo,
+            dataGame
+          });
 
-        if (roomCtr) {
-          // 获取游戏数据并返回
-          dataGame = roomCtr.getRoomInfo();
-        }
-        let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-        if (!userInfo) {
-          return
-        }
-        this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
-          userInfo: userInfo,
-          dataGame
-        });
+        }).catch(e => {
+          console.log(`${uid}登录失败`)
+        })
+
         break;
       }
       case PROTOCLE.CLIENT.MATCH: {

@@ -181,6 +181,13 @@ export default class SocketServer {
       this.io.write(this.encode(data));
     });
   }
+  static doLogin(data) {
+    return this.sendMsg({
+      method: "_H5DoLogin",
+      args: [],
+      kwargs: data
+    });
+  }
   static doHeart() {
     this.sendMsg({
       method: "_heartbeat",
