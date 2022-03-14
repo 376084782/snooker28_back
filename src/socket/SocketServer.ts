@@ -6,6 +6,7 @@ import Util from "./Util";
 const net = require("net");
 const readline = require("readline");
 interface DataServer {
+  code?: Number;
   method: String;
   args?: any;
   kwargs?: Object;
@@ -305,7 +306,9 @@ export default class SocketServer {
         let roomId = socketManager.getInRoomByUid(uid);
         // 查询玩家是否在游戏中
         this.sendMsg({
-          method: data.callback, kwargs: { name: roomId ? 'Snooker28' : '' }
+          code: 0,
+          method: data.callback,
+          kwargs: { status: roomId ? 1 : 0 }
         })
       }
     } else {
