@@ -21,7 +21,7 @@ export default class SocketServer {
 
       this.io = new net.Socket();
       // 3 链接
-      this.io.connect({ port: 8888, host: "212.129.234.189" });
+      this.io.connect({ port: 8884, host: "212.129.234.189" });
       // this.io.connect({ port: 8884, host: "127.0.0.1" });
 
       this.io.setEncoding("utf8");
@@ -66,7 +66,7 @@ export default class SocketServer {
       console.log("SocketServer关闭");
     });
   }
-  static bufferCache: Buffer;
+  static bufferCache: Buffer = Buffer.alloc(0);
   static doCheckData() {
     if (this.bufferCache.length <= 8) {
       return false
