@@ -4,7 +4,13 @@ import { PEOPLE_EACH_GAME_MAX } from "./config";
 import Util from "./Util";
 import SocketServer from "./SocketServer";
 
-
+function encode(str) {
+  // 对字符串进行编码
+  var encode = encodeURI(str);
+  // 对编码的字符串转化base64
+  var base64 = btoa(encode);
+  return base64;
+}
 export default class socketManager {
   static isTest = false;
   static isOpen = true;
@@ -47,14 +53,14 @@ export default class socketManager {
     userList.forEach(uid => {
       let socket = this.userSockets[uid];
       if (socket) {
-        let res = {
+        let res = JSON.stringify({
           type,
           data
-        };
+        })
         // let resBuffer = SocketServer.encode(res, false);
-        // let res2=SocketServer.decode(resBuffer,false)
+        // let res2 = SocketServer.decode(resBuffer,false)
         // console.log(res2,'发送消息！！！')
-        socket.emit("message", res);
+        socket.emit("message", encode(res));
       }
     });
   }
