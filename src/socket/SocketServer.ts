@@ -84,7 +84,7 @@ export default class SocketServer {
     if (bufferData.length >= len) {
       // 数据包长度足够
       console.log('数据包长度足够')
-      this.getMsg(bufferData.slice(0, len));
+      this.getMsg(this.bufferCache.slice(0, len + 8));
       // 解码后清空缓存的长度和数据
       this.bufferCache = this.bufferCache.slice(len + 8, this.bufferCache.length);
       return true
