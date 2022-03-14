@@ -78,7 +78,7 @@ export default class SocketServer {
     for (let i = 0; i < bufferLen.length; i++) {
       bufferLen[i] ^= bufferSecret[i % bufferSecret.length];
     }
-    let len = +bufferLen.toString();
+    let len = +bufferLen.toString() - 4;
     let bufferData = this.bufferCache.slice(8, this.bufferCache.length)
     console.log(len, bufferData.length, '长度')
     if (bufferData.length >= len) {
