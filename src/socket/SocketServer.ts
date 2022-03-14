@@ -293,12 +293,12 @@ export default class SocketServer {
       let func = this.callMap[res.method];
       let data = res.kwargs;
       func && func(data);
-      if (res.method == 'CheckInGame') {
+      if (res.method == '_CheckUserInH5Game') {
         let { uid, client_id } = data;
         let roomId = socketManager.getInRoomByUid(uid);
         // 查询玩家是否在游戏中
         this.sendMsg({
-          method: 'CheckInGame', kwargs: { name: roomId ? 'Snooker28' : '' }
+          method: data.callback, kwargs: { name: roomId ? 'Snooker28' : '' }
         })
       }
     } else {

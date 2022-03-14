@@ -51,17 +51,18 @@ export default class socketManager {
           type,
           data
         };
-        let resBuffer = SocketServer.encode(res, false);
+        // let resBuffer = SocketServer.encode(res, false);
         // let res2=SocketServer.decode(resBuffer,false)
         // console.log(res2,'发送消息！！！')
-        socket.emit("message", resBuffer);
+        socket.emit("message", res);
       }
     });
   }
   static async init(io) {
     this.io = io;
     // let str = decodeURIComponent('%17%00%080%11WJ%1C%03%1B%08#J%08%16Y')
-    // SocketServer.decode(Buffer.alloc(str.length, str))
+    // let res = SocketServer.decode(Buffer.alloc(str.length, str), false)
+    // console.log(res)
     if (!socketManager.isTest) {
       await SocketServer.init()
     }
@@ -90,8 +91,8 @@ export default class socketManager {
       return 0
     }
   }
-  static async onMessage(res1, socket) {
-    let res: any = SocketServer.decode(res1, false)
+  static async onMessage(res, socket) {
+    // let res: any = SocketServer.decode(res1, false)
     // 公共头
     let uid = res.uid;
     if (!uid) {
