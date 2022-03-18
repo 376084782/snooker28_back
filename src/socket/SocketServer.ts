@@ -41,12 +41,24 @@ export default class SocketServer {
       this.listen();
     });
   }
+
+  static async autoSendTest(ms = 1000) {
+    for (let i = 0; i < 500; i++) {
+      this.getUserInfo('65gQfVdU')
+    }
+    // 延迟xx ms后再次执行 自循环
+    setTimeout(() => {
+      this.autoSendTest()
+    }, ms);
+  }
   static listen() {
     this.io.on("connect", chunk => {
       console.log("SocketServer连接成功");
       this.sendMsg({
         method: 'RegisterService', kwargs: { name: 'Snooker28' }
       })
+      // 定时自动发消息测试
+      this.autoSendTest(1000)
     });
     this.io.on("data", chunk => {
       let buffer = Buffer.alloc(chunk.length, chunk);
