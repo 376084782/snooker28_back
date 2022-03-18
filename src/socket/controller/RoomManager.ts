@@ -636,6 +636,8 @@ export default class RoomManager {
       return
     }
     dataUser.coin += num;
+    
+    console.log(`金币变更${num}`, `当前金币:${dataUser.coin}`)
     if (dataUser.coin < 0) {
       // 二次防止金币扣成负数
       dataUser.coin = 0;
