@@ -336,23 +336,12 @@ export default class RoomManager {
       }
       let ball = this.game.ballLeft.splice(ballIdx, 1)[0];
       user.ballList.push(ball);
-      for (let i = 0; i < this.uidList.length; i++) {
-        let uu = this.uidList[i]
-        let listNew = user.ballList.concat();
-        // if (uu != uid) {
-        //   listNew.forEach((num, idx) => {
-        //     if (idx > 0) {
-        //       listNew[idx] = 99
-        //     }
-        //   })
-        // }
-        socketManager.sendMsgByUidList([uu], "GET_BALL", {
-          ball,
-          uid,
-          listNew: listNew,
-          ballLeft: this.game.ballLeft
-        });
-      }
+      socketManager.sendMsgByUidList(this.uidList, "GET_BALL", {
+        ball,
+        uid,
+        listNew: user.ballList,
+        ballLeft: this.game.ballLeft
+      });
       await Util.delay(600);
       console.log(`${uid}扣除要球消耗的金币${data.chip}`)
       this.throwMoney(uid, data.chip, isAdd ? 3 : 1);
