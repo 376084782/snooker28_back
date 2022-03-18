@@ -258,8 +258,8 @@ export default class RoomManager {
     })
     for (let i = 0; i < this.userList.length; i++) {
       let user = this.userList[i];
-      this.changeMoney(user.uid, -this.config.teaMoney, 30002);
       console.log(`扣除${user.uid}茶水费${this.config.teaMoney}金币`)
+      this.changeMoney(user.uid, -this.config.teaMoney, 30002);
     }
     // 随机开始座位
     socketManager.sendMsgByUidList(this.uidList, "START_GAME", {
@@ -647,6 +647,7 @@ export default class RoomManager {
       return
     }
     dataUser.coin += num;
+    console.log(`金币变更${num}`, `当前金币:${dataUser.coin}`)
     if (dataUser.coin < 0) {
       // 二次防止金币扣成负数
       dataUser.coin = 0;
