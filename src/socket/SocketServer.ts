@@ -1,7 +1,8 @@
 import socketManager from ".";
 import ModelUser from "../models/ModelUser";
 import Util from "./Util";
-
+import { Socket as ss } from "net";
+import { setInterval } from "timers";
 // 1 引入模块
 const net = require("net");
 const readline = require("readline");
@@ -12,21 +13,44 @@ interface DataServer {
   kwargs?: Object;
   call?: Function;
 }
+interface Req {
+  data?: Buffer,
+  callName?: string,
+  rsv?: any,
+  rej?: any,
+  sendTime?: number,
+}
 export default class SocketServer {
-  static io;
+  static io: ss;
 
+  static cwnd = 32
+  static cwndMax = 32
+  static waitQueue: Array<Req> = []
+  static RTTThresh = 200
+  static retryTimes = 10
+  static timer: NodeJS.Timeout
   static init() {
+    if (this.retryTimes <= 0) {
+      console.error("服务器连接失败")
+      throw new Error("服务器连接失败");
+    }
+    this.retryTimes --
     return new Promise(rsv => {
       // rsv(null)
       // return;
-
+      if (this.timer) {
+        clearInterval(this.timer)
+      }
       this.io = new net.Socket();
       // 3 链接
-      this.io.connect({ port: 8888, host: "212.129.234.189" });
+      this.io.connect({ port: 8884, host: "212.129.234.189" });
       // this.io.connect({ port: 8884, host: "127.0.0.1" });
 
       this.io.setEncoding("utf8");
       this.io.on("ready", async () => {
+        this.timer = setInterval(_ => {
+          this.ConsumeRequest()
+        }, 100)
         setInterval(e => {
           this.doHeart();
         }, 5000);
@@ -45,6 +69,7 @@ export default class SocketServer {
   static listen() {
     this.io.on("connect", chunk => {
       console.log("SocketServer连接成功");
+      this.retryTimes = 10
       this.sendMsg({
         method: 'RegisterService', kwargs: { name: 'Snooker28' }
       })
@@ -59,20 +84,27 @@ export default class SocketServer {
       console.log('========单次解包完成========')
     });
     this.io.on("error", e => {
-      console.log("SocketServer连接出错", e.message);
+      console.log("SocketServer连接出错", e);
+      setTimeout(() => {
+        this.init()
+      }, 1000);
     });
     this.io.on("drain", e => {
     });
     this.io.on("close", e => {
-      console.log("SocketServer关闭");
+      console.log("SocketServer关闭, 尝试重连",e);
+      setTimeout(() => {
+        this.init()
+      }, 1000);
     });
   }
   static bufferCache: Buffer = Buffer.alloc(0);
+  static waitingLen: number = 0
   static doCheckData() {
     if (this.bufferCache.length <= 8) {
       return false
     }
-    let bufferLen = this.bufferCache.slice(0, 8);
+    let bufferLen = Buffer.from(this.bufferCache.slice(0, 8).toString());
     // 得到两个byte数组
     let bufferSecret = Buffer.alloc(this.strSecret.length, this.strSecret);
     // 俩数组去异或
@@ -155,7 +187,7 @@ export default class SocketServer {
       return {};
     }
   }
-  static timeMap = {}
+  static timeMap: Map<string, Req> = new Map()
   static callMap = {};
   static sendMsg(data: DataServer) {
     return new Promise((rsv, rej) => {
@@ -165,11 +197,32 @@ export default class SocketServer {
       }
       let callId = Util.getUniqId();
       let callName = `snooker28_${callId}`;
-      this.timeMap[callName] = new Date().getTime()
+
       data.kwargs["callback"] = callName;
-      if (data.method != "_heartbeat") {
-        console.log(`请求SocketServer`, data,);
+      let temp = this.encode(data)
+      // if (data.method != "_heartbeat") {
+      //   console.log(`请求SocketServer`, data,);
+      // }
+      this.trySend(callName, temp, rsv, rej)
+    });
+  }
+  static trySend(callName: string, data: Buffer, rsv, rej) {
+    if (this.timeMap.size < this.cwnd) {
+      // 小于窗口大小可以添加并发送
+      let success = false
+      try {
+        success = this.io.write(data)
+      } catch {
+
       }
+      if (!success) {
+        console.log("写进缓冲区失败，加入等待队列重新发送", callName)
+        this.waitQueue.unshift({callName: callName, data: data, rej: rej, rsv: rsv})
+        return
+      }
+      this.timeMap.set(callName, {
+        callName: callName, data: data, rsv: rsv, rej: rej, sendTime: new Date().getTime()
+      })
       this.callMap[callName] = e => {
         if (e.code == 0) {
           rsv(e.data || e);
@@ -179,8 +232,13 @@ export default class SocketServer {
         this.callMap[callName] = [];
         delete this.callMap[callName];
       };
-      this.io.write(this.encode(data));
-    });
+      console.log("CALLBAK", callName)
+    } else {
+      // 否则添加到等待队列中
+      console.log("发送队列已满，进入等待队列", callName)
+      this.waitQueue.push({callName: callName, data: data, rej: rej, rsv: rsv})
+    }
+
   }
   static doLogin(data) {
     return this.sendMsg({
@@ -293,25 +351,71 @@ export default class SocketServer {
     return data;
   }
 
-  static getMsg(msg: Buffer) {
-    let res: any = this.decode(msg);
-    let timeStart = this.timeMap[res.method]
-    console.log(`SocketServer返回,耗时${new Date().getTime() - timeStart}`, res);
-    if (res.method) {
-      let func = this.callMap[res.method];
-      let data = res.kwargs;
-      func && func(data);
-      if (res.method == '_CheckUserInH5Game') {
-        let { uid, client_id } = data;
-        let roomId = socketManager.getInRoomByUid(uid);
-        // 查询玩家是否在游戏中
-        this.sendMsg({
-          code: 0,
-          method: data.callback,
-          kwargs: { status: roomId ? 1 : 0 }
-        })
+  static ConsumeRequest() {
+    // 定时发送
+    let timeNow = new Date().getTime()
+    for (const key in this.timeMap) {
+      if (timeNow - this.timeMap.get(key).sendTime > 15000) {
+        let req = this.timeMap.get(key)
+        console.log("TIMEOUT: 超时了", req.callName)
+        // 重新加入发送队列的首部，直到收到回复为止，如果服务端已经处理过了会忽略并返回通知
+        // 这里需要注意重连重发的情况，服务端会重复处理
+        // TODO: 如果遇到了吞金币或其他情况请检查这里
+        this.trySend(req.callName, req.data, req.rsv, req.rej)
       }
-    } else {
+    }
+    if (this.waitQueue.length || this.timeMap.size)
+      console.log("等待队列", this.waitQueue.length, "发送队列", this.timeMap.size)
+    if (this.timeMap.size == 1) {
+      console.log(this.timeMap.keys())
+    }
+    if (this.waitQueue.length) {
+      while (this.waitQueue.length > 0 && this.timeMap.size < this.cwnd) {
+        // 等待队列长度大于0且发送队列小于窗口大小
+        let req = this.waitQueue.shift()
+        console.log("重新进入发送队列", req.callName)
+        this.trySend(req.callName, req.data, req.rsv, req.rej)
+      }
+    }
+  }
+
+  static getMsg(msg: Buffer) {
+    try {
+      let res: any = this.decode(msg);
+      if (!this.timeMap.has(res.method)) {
+        console.log("METHOD_NOT_EXIST", res.method)
+        return
+      }
+      let timeNow = new Date().getTime()
+      let rtt = timeNow - this.timeMap.get(res.method).sendTime
+      console.log("返回", rtt, res.method)
+      if (rtt > this.RTTThresh) {
+        // 拥塞控制
+        this.cwnd = Math.max(Math.floor(this.cwnd / 2), 1)
+        console.log("网络拥塞，触发拥塞控制，cwnd=", this.cwnd)
+      } else {
+        // 恢复大小，但是不能超过max
+        this.cwnd = Math.min(this.cwnd + 1, this.cwndMax)
+      }
+      this.timeMap.delete(res.method)
+
+      // console.log(`SocketServer返回,耗时${new Date().getTime() - timeStart}`, res);
+      if (res.method) {
+        let func = this.callMap[res.method];
+        let data = res.kwargs;
+        func && func(data);
+        if (res.method == '_CheckUserInH5Game') {
+          let { uid, client_id } = data;
+          let roomId = socketManager.getInRoomByUid(uid);
+          // 查询玩家是否在游戏中
+          this.sendMsg({
+            method: data.callback, kwargs: { name: roomId ? 'Snooker28' : '' }
+          })
+        }
+      } else {
+      }
+    } catch (e) {
+      console.log("GETMSG_ERROR", e)
     }
   }
   static async onMessage(res, socket) { }
