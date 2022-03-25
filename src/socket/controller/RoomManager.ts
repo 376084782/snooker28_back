@@ -642,7 +642,7 @@ export default class RoomManager {
       // 二次防止金币扣成负数
       dataUser.coin = 0;
     }
-    await SocketServer.setUserInfo({
+    SocketServer.setUserInfo({
       tag,
       uid: uid,
       type: num > 0 ? "add" : "sub",
@@ -650,8 +650,8 @@ export default class RoomManager {
       diamond: 0,
       reason: "桌球28游戏"
     });
-    let user = this.getUserById(uid);
-    user.coin = dataUser.coin;
+    //let user = this.getUserById(uid);
+    //user.coin = dataUser.coin;
     socketManager.sendMsgByUidList(
       this.uidList,
       PROTOCLE.SERVER.ROOM_USER_UPDATE,
