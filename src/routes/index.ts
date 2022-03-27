@@ -31,11 +31,21 @@ router.post("/room/update", async (req, res, next) => {
 router.get("/room/list", async (req, res, next) => {
   let data = req.query;
   let conf: any = await ModelConfigRoom.find({});
+  let listRes = []
   conf.forEach(e => {
-    e.chipList = JSON.parse(e.chipList);
+    listRes.push({
+      chipList: JSON.parse(e.chipList),
+      name: e.name,
+      id: e.id,
+      basicChip: e.basicChip,
+      teaMoney: e.teaMoney,
+      min: e.min,
+      max: e.max,
+      count: socketManager.getCountByRoomLev(e.id)
+    })
   });
   res.send({
-    code: 0, data: conf
+    code: 0, data: listRes
   });
 });
 router.post("/user/list", async (req, res, next) => {

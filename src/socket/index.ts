@@ -12,7 +12,7 @@ function encode(str) {
   return base64;
 }
 export default class socketManager {
-  static isTest = false;
+  static isTest = true;
   static isOpen = true;
   static io;
   static userSockets = {};
@@ -24,8 +24,7 @@ export default class socketManager {
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
       return (
         roomCtr.level == level &&
-        roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX &&
-        roomCtr.step == 0
+        roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX
       );
     });
     if (list.length == 0) {
@@ -40,6 +39,15 @@ export default class socketManager {
   }
   static removeRoom(room: RoomManager) {
     this.aliveRoomList = this.aliveRoomList.filter((ctr: RoomManager) => ctr != room);
+  }
+  static getCountByRoomLev(lev: number) {
+    let roomList = this.aliveRoomList.filter((ctr: RoomManager) => ctr.level == lev);
+    let count = 0
+    roomList.forEach(e => {
+      count += e.uidList.length
+      console.log(e.uidList)
+    })
+    return count;
   }
 
   // 公共错误广播
@@ -189,14 +197,6 @@ export default class socketManager {
         });
         this.userPings[uid] = data.timestamp
         break;
-      }
-      case 'READY': {
-        if (!roomCtr) {
-          return;
-        }
-        let { flag } = data;
-        roomCtr.changeReady(uid, flag)
-        break
       }
       case 'ACTION': {
         if (!roomCtr) {
