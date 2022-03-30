@@ -210,6 +210,8 @@ export default class RoomManager {
     this.game.timeStart = 0
     this.flagCanDoAction = false;
     this.step = 0;
+    this.countBYQ = 0;
+    this.flagFinishAfterAllinAndBYQ = false;
     this.roundAllIn = {};
     this.game = {
       count: 0,
@@ -358,6 +360,7 @@ export default class RoomManager {
       console.log(`${uid}请求不要球`)
       this.throwMoney(uid, data.chip, isAdd ? 4 : 2);
       console.log(`${uid}扣除不要球消耗的金币${data.chip}，并执行不要球操作`)
+      this.countBYQ++
     } else if (type == 4) {
       // 放弃
       console.log(`${uid}请求放弃`)
@@ -368,6 +371,17 @@ export default class RoomManager {
     this.game.count++;
     if (this.game.count >= this.game.countInRound) {
       this.game.count = 0;
+      let listAllinRound = [];
+      for (let uid in this.roundAllIn) {
+        listAllinRound.push(this.roundAllIn[uid])
+      }
+      if (this.game.round > Math.min(...listAllinRound)) {
+        this.flagFinishAfterAllinAndBYQ = this.countBYQ == this.game.countInRound
+      } else {
+        this.flagFinishAfterAllinAndBYQ = false
+      }
+
+      this.countBYQ = 0;
       this.game.round++;
       this.game.countInRound = this.getUserCanPlay().length;
     }
@@ -540,6 +554,11 @@ export default class RoomManager {
       e => !e.isLose && this.getSumExpFirst(e.ballList) < 28
     );
   }
+
+  countBYQ = 0;
+  flagFinishAfterAllinAndBYQ = false;
+
+
   async checkFinish(turnFinish) {
     let isFinish = false;
     // 15轮结束
@@ -548,10 +567,12 @@ export default class RoomManager {
       this.userListInGame.filter(
         e => !e.isLose && this.getSumExpFirst(e.ballList) < 28
       ).length <= 1;
-    let onlyOneNotAllin =
-      turnFinish &&
-      this.userListInGame.filter(e => !this.roundAllIn[e.uid]).length <= 1;
-    isFinish = roundFinish || isLose || onlyOneNotAllin;
+    // let onlyOneNotAllin =
+    //   turnFinish &&
+    //   this.userListInGame.filter(e => !this.roundAllIn[e.uid]).length <= 1;
+
+
+    isFinish = roundFinish || isLose || this.flagFinishAfterAllinAndBYQ;
     if (!isFinish) {
       return false;
     }
@@ -559,8 +580,8 @@ export default class RoomManager {
       console.log('15轮结束，结算')
     } else if (isLose) {
       console.log('只剩一个人没有认输，结算')
-    } else if (onlyOneNotAllin) {
-      console.log('只剩一个人没有allin，结算')
+    } else if (this.flagFinishAfterAllinAndBYQ) {
+      console.log('allin后全部不要球，结算')
     }
     this.step = 10;
     this.uidListLastRound = [].concat(this.uidList);
@@ -601,7 +622,7 @@ export default class RoomManager {
       // 赢家没有allin过 直接给他钱
       winner.mapGain[winner.uid] = chipTotalInDesk;
     }
-    if (roundFinish || onlyOneNotAllin) {
+    if (roundFinish || this.flagFinishAfterAllinAndBYQ) {
       this.userListInGame.forEach(
         e => {
           let maxExpFirst = this.getSumExpFirst(e.ballList)
