@@ -1,11 +1,24 @@
 import API from "../api/API";
 import ModelConfigRoom from "../models/ModelConfigRoom";
+import ModelUser from "../models/ModelUser";
 import socketManager from "../socket";
+import TrackingManager from "../socket/controller/TrackingManager";
 import SocketServer from "../socket/SocketServer";
 
 var express = require("express");
 var router = express.Router();
 /* GET home page. */
+router.get("/user/track", async (req, res, next) => {
+  let data = req.query;
+  await TrackingManager.checkClearGain(data.uid)
+  let userInfo: any = await ModelUser.findOne({ uid: data.uid });
+  if (!userInfo) {
+    await ModelUser.create({ uid: data.uid })
+  }
+  res.send({
+    code: 0, data: userInfo
+  });
+});
 
 router.post("/hall/check_in_game", async (req, res, next) => {
   let data = req.body;

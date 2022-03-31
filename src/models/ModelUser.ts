@@ -15,6 +15,8 @@ const ModelUser = new Schema({
   count28: { type: Number, default: 0 },
   // 盈利
   gain: { type: Number, default: 0 },
+  // 最后清空盈利时间
+  lastClearTime: { type: Number, default: 0 },
 })
 
 export default model('user', ModelUser);

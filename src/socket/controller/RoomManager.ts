@@ -301,7 +301,7 @@ export default class RoomManager {
       uid,
       type,
       data,
-      chipBefore
+      chipBefore,
     });
     await Util.delay(100);
     if (type == 1) {
