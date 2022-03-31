@@ -5,6 +5,7 @@ import PROTOCLE from "../config/PROTOCLE";
 import ModelConfigRoom from "../../models/ModelConfigRoom";
 import SocketServer from "../SocketServer";
 import TrackingManager from "./TrackingManager";
+import ModelUser from "../../models/ModelUser";
 // 游戏内玩家全部离线的房间，自动清除
 export default class RoomManager {
   // 房间等级
@@ -341,7 +342,7 @@ export default class RoomManager {
       let sum = Util.sum(user.ballList)
       if (sum == 28) {
         // 正好达到28点，计数
-        TrackingManager.addtracking28()
+        TrackingManager.addtracking28(user.uid)
       }
       socketManager.sendMsgByUidList(this.uidList, "GET_BALL", {
         ball,
@@ -401,10 +402,32 @@ export default class RoomManager {
     if (isFinish) {
       await Util.delay(8000);
       this.resetGameInfo();
-      this.checkCanStart()
-      socketManager.sendMsgByUidList(this.uidList, "FINISH_OVER", {
-        dataGame: this.getRoomInfo()
-      });
+      this.checkCanStart();
+      this.userList.forEach(user => {
+        if (user.coin < this.config.min) {
+          // 金币不在房间范围内
+          this.leave(user.uid)
+          socketManager.sendMsgByUidList([user.uid], "FINISH_OVER", {
+            dataGame: this.getRoomInfo(),
+            isContinue: false,
+            msg: '金币不足'
+          });
+        } else if (user.coin > this.config.max) {
+          // 金币不在房间范围内
+          this.leave(user.uid)
+          socketManager.sendMsgByUidList([user.uid], "FINISH_OVER", {
+            dataGame: this.getRoomInfo(),
+            isContinue: false,
+            msg: '金币大于房间上限'
+          });
+        } else {
+          socketManager.sendMsgByUidList([user.uid], "FINISH_OVER", {
+            dataGame: this.getRoomInfo(),
+            isContinue: true,
+            msg: ''
+          });
+        }
+      })
     } else {
       await Util.delay(200);
       this.flagCanDoAction = true;
@@ -675,6 +698,9 @@ export default class RoomManager {
       console.log('异常：未查找到玩家信息', uid)
       return
     }
+    // 统计盈利情况
+    TrackingManager.addtrackingCost(uid, num)
+
     dataUser.coin += num;
 
     console.log(`金币变更${num}`, `当前金币:${dataUser.coin}`)

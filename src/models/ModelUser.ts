@@ -11,6 +11,10 @@ const ModelUser = new Schema({
   nickname: { type: String, default: '' },
   // 玩家头像
   avatar: { type: String, default: '' },
+  // 总共28的次数
+  count28: { type: Number, default: 0 },
+  // 盈利
+  gain: { type: Number, default: 0 },
 })
 
 export default model('user', ModelUser);

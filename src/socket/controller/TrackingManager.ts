@@ -1,16 +1,21 @@
 import ModelConfigBasic from "../../models/ModelConfigBasic";
+import ModelUser from "../../models/ModelUser";
 
 export default class TrackingManager {
-  static flagAdding = true;
-  static countWillAdd = 0;
-  static async addtracking28() {
-    this.countWillAdd++;
-    if (this.flagAdding) {
-      return
+  static async addtracking28(uid) {
+    let db = await ModelUser.findOne({ uid });
+    if (!db) {
+      await ModelUser.create({ uid, count: 1 })
+    } else {
+      await ModelConfigBasic.updateOne({ uid }, { count: db.count28 + 1 })
     }
-    this.flagAdding = true;
-    let db = await ModelConfigBasic.findOne();
-    await ModelConfigBasic.updateOne({ _id: db._id }, { count: db.count + this.countWillAdd })
-    this.flagAdding = false;
+  }
+  static async addtrackingCost(uid, cost) {
+    let db = await ModelUser.findOne({ uid });
+    if (!db) {
+      await ModelUser.create({ uid, gain: cost })
+    } else {
+      await ModelConfigBasic.updateOne({ uid }, { gain: db.gain + cost })
+    }
   }
 }
