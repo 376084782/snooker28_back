@@ -28,6 +28,9 @@ export default class TrackingManager {
     }
   }
   static async addtrackingCost(uid, cost) {
+    if (cost < 0) {
+      return
+    }
     await this.checkClearGain(uid)
     let db = await ModelUser.findOne({ uid });
     if (!db) {
