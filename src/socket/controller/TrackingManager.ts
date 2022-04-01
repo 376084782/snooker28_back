@@ -22,9 +22,9 @@ export default class TrackingManager {
   static async addtracking28(uid) {
     let db = await ModelUser.findOne({ uid });
     if (!db) {
-      await ModelUser.create({ uid, count: 1 })
+      await ModelUser.create({ uid, count28: 1 })
     } else {
-      await ModelUser.updateOne({ uid }, { count: db.count28 + 1 })
+      await ModelUser.updateOne({ uid }, { count28: db.count28 + 1 })
     }
   }
   static async addtrackingCost(uid, cost) {
