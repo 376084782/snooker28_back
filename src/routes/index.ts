@@ -4,10 +4,25 @@ import ModelUser from "../models/ModelUser";
 import socketManager from "../socket";
 import TrackingManager from "../socket/controller/TrackingManager";
 import SocketServer from "../socket/SocketServer";
+var settoken = require('../utils/token_vertify');
 
 var express = require("express");
 var router = express.Router();
 /* GET home page. */
+
+router.post('/login', async function (req, res, next) {
+  let data = req.body;
+  if (data.password == 'snooker123456' && data.username == 'snooker28_admin') {
+    // 登录成功
+    settoken.setToken(data.username, data._id).then((data) => {
+      return res.json({ code: 0, data: { accessToken: data } });
+    })
+  } else {
+    // 密码错误 登录失败
+    return res.json({ code: 2000, msg: '密码错误，登录失败' });
+  }
+});
+
 router.get("/user/track", async (req, res, next) => {
   let data = req.query;
   await TrackingManager.checkClearGain(data.uid)
@@ -59,6 +74,19 @@ router.get("/room/list", async (req, res, next) => {
   });
   res.send({
     code: 0, data: listRes
+  });
+});
+
+router.post("/user/kick", async (req, res, next) => {
+  let { uid } = req.body;
+  let rr = await socketManager.doKick(uid);
+  res.send(rr);
+});
+router.get("/user/online/count", async (req, res, next) => {
+  let num = await socketManager.getOnlineNum();
+  res.send({
+    code: 0,
+    data: num
   });
 });
 router.post("/user/list", async (req, res, next) => {

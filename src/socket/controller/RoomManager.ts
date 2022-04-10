@@ -97,7 +97,7 @@ export default class RoomManager {
   leave(uid) {
     if (this.step > 0 && this.step != 2) {
       this.userDisconnectInGame(uid)
-      return;
+      return -1;
     }
     clearTimeout(this.timerJoin[uid]);
     socketManager.sendMsgByUidList([uid], PROTOCLE.SERVER.GO_HALL, {});

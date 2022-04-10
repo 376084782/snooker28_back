@@ -6,6 +6,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var vertoken = require('./utils/token_vertify');
+var expressJwt = require('express-jwt');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -13,6 +15,8 @@ var usersRouter = require('./routes/users');
 
 var app = express();
 
+var bodyParser = require("body-parser");
+app.use(bodyParser.json());
 app.all('*', function (req, res, next) {
 	// 设置请求头为允许跨域
 	res.header('Access-Control-Allow-Origin', '*');
@@ -26,6 +30,29 @@ app.all('*', function (req, res, next) {
 		next();
 	}
 });
+app.use(function (req, res, next) {
+	var token = req.headers['Authorization'] || req.query['token'] || undefined;
+	console.log(token)
+	if (token == undefined) {
+		return next();
+	} else {
+		vertoken.verToken(token).then((data) => {
+			req.data = data;
+			return next();
+		}).catch((error) => {
+			return next();
+		})
+	}
+});
+
+//验证token是否过期并规定哪些路由不用验证
+app.use(expressJwt({
+	secret: 'mes_qdhd_mobile_xhykjyxgs',
+	algorithms: ['HS256']
+}).unless({
+	path: ['/login', '/room/list', '/avatar']//除了这个地址，其他的URL都需要验证
+}))
+
 
 
 // view engine setup
@@ -42,6 +69,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+//当token失效返回提示信息
+app.use(function (err, req, res, next) {
+	if (err.status == 401) {
+		console.log(err)
+		return res.send({
+			code: 401,
+			msg: 'token失效'
+		});
+	}
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

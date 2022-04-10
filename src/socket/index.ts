@@ -19,6 +19,15 @@ export default class socketManager {
   static userPings = {};
   static aliveRoomList: RoomManager[] = [];
   static userMap = {};
+  static getOnlineNum() {
+    let num = 0;
+    for (let uid in this.userSockets) {
+      if (this.userSockets[uid]) {
+        num++
+      }
+    }
+    return num
+  }
   static async getRoomCanJoin({ level }) {
     // 检查当前已存在的房间中 公开的，人未满的,未开始游戏的
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
@@ -222,6 +231,29 @@ export default class socketManager {
       }
     }
   }
+  static async doKick(uid) {
+    let roomId = this.getInRoomByUid(uid);
+    let roomCtr = this.getRoomCtrByRoomId(roomId);
+    if (roomCtr) {
+      let res = roomCtr.leave(uid)
+      if (res == -1) {
+        return {
+          code: -1,
+          msg: '游戏中，设为断线'
+        }
+      } else {
+        return {
+          code: 0,
+          msg: '踢出房间'
+        }
+      }
+    } else {
+      return {
+        code: -1,
+        msg: '未在房间内，无法踢出'
+      }
+    }
+  }
   static autoCheckDisConnected() {
     let t = new Date().getTime();
     for (let uid in this.userPings) {
@@ -254,9 +286,6 @@ export default class socketManager {
     }
   }
   static onConnect(socket) {
-    setInterval(e => {
-      // socketManager.autoCheckDisConnected()
-    }, 1000)
     socket.on('disconnect', () => {
       socketManager.onDisconnect(socket)
     });
