@@ -4,6 +4,7 @@ import ModelUser from "../models/ModelUser";
 import socketManager from "../socket";
 import TrackingManager from "../socket/controller/TrackingManager";
 import SocketServer from "../socket/SocketServer";
+import axios from 'axios'
 var settoken = require('../utils/token_vertify');
 
 var express = require("express");
@@ -92,8 +93,22 @@ router.get("/user/online/count", async (req, res, next) => {
 router.post("/user/list", async (req, res, next) => {
   let { pageSize, page, userName } = req.body;
   let list: any = await SocketServer.getUserList(pageSize, page, userName)
-  res.send(list);
+  res.send({ code: 0, date: list });
 });
+
+router.post("/asset/rank", async (req, res, next) => {
+  let { tag, date, timeType } = req.body;
+  let data = await SocketServer.sendMsg({
+    method: "GetAssetRank",
+    args: [],
+    kwargs: {
+      tag, date, timeType
+    }
+  });
+  res.send({ code: 0, data: data });
+});
+
+
 router.post("/user/toggleCheat", async (req, res, next) => {
   let { uid, flag } = req.body;
   await SocketServer.setUserTag(uid, flag);
