@@ -756,6 +756,7 @@ export default class RoomManager {
     let info: any = {
       isInRoom: true,
       gameInfo: {
+        roomId: this.roomId,
         config: this.config,
         step: this.step,
         level: this.level,

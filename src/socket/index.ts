@@ -28,7 +28,7 @@ export default class socketManager {
     }
     return num
   }
-  static async getRoomCanJoin({ level }) {
+  static async getRoomCanJoin(level, roomId?) {
     // 检查当前已存在的房间中 公开的，人未满的,未开始游戏的
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
       return (
@@ -36,6 +36,9 @@ export default class socketManager {
         roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX
       );
     });
+    if (!!roomId) {
+      list = list.filter(e => e.roomId != roomId)
+    }
     if (list.length == 0) {
       let roomNew = new RoomManager({ level });
       await roomNew.initConfig();
@@ -189,7 +192,7 @@ export default class socketManager {
 
           let targetRoom: RoomManager;
           let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-          targetRoom = await this.getRoomCanJoin({ level });
+          targetRoom = await this.getRoomCanJoin(level);
           targetRoom.join(userInfo);
         } else {
           if (!roomCtr) {
@@ -203,11 +206,11 @@ export default class socketManager {
         if (!roomCtr) {
           return;
         }
-        let { level } = data;
+        let { level, roomId } = data;
         roomCtr.leave(uid, false);
         let targetRoom: RoomManager;
         let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-        targetRoom = await this.getRoomCanJoin({ level });
+        targetRoom = await this.getRoomCanJoin(level, roomId);
         targetRoom.join(userInfo);
         break
       }
