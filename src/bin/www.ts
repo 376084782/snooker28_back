@@ -13,7 +13,7 @@ var http = require("http");
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || "9020");
+var port = normalizePort(process.env.PORT || "9025");
 console.log("ajax监听端口：", port);
 console.log("ws监听端口：", port + 1);
 app.set("port", port);
