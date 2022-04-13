@@ -12,7 +12,7 @@ function encode(str) {
   return base64;
 }
 export default class socketManager {
-  static isTest = false;
+  static isTest = true;
   static isOpen = true;
   static io;
   static userSockets = {};
@@ -198,6 +198,18 @@ export default class socketManager {
           roomCtr.leave(uid);
         }
         break;
+      }
+      case 'CHANGE_DESK': {
+        if (!roomCtr) {
+          return;
+        }
+        let { level } = data;
+        roomCtr.leave(uid, false);
+        let targetRoom: RoomManager;
+        let userInfo = await SocketServer.getUserInfoAndFormat(uid)
+        targetRoom = await this.getRoomCanJoin({ level });
+        targetRoom.join(userInfo);
+        break
       }
       case PROTOCLE.CLIENT.PING: {
         // 发回接收到的时间戳，计算ping
