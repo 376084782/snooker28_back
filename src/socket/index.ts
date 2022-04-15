@@ -29,9 +29,13 @@ export default class socketManager {
     return num
   }
   static async getRoomCanJoin(level, roomId?) {
+    let d = new Date().getTime();
     // 检查当前已存在的房间中 公开的，人未满的,未开始游戏的
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
       return (
+        !roomCtr.game.timeStart ||
+        d < roomCtr.game.timeStart - 1500 ||
+        d > roomCtr.game.timeStart + 1500 &&
         roomCtr.level == level &&
         roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX
       );
