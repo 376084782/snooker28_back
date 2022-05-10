@@ -4,36 +4,35 @@ import ModelUser from "../models/ModelUser";
 import socketManager from "../socket";
 import TrackingManager from "../socket/controller/TrackingManager";
 import SocketServer from "../socket/SocketServer";
-import axios from "axios";
-var settoken = require("../utils/token_vertify");
+import axios from 'axios'
+var settoken = require('../utils/token_vertify');
 
 var express = require("express");
 var router = express.Router();
 /* GET home page. */
 
-router.post("/login", async function(req, res, next) {
+router.post('/login', async function (req, res, next) {
   let data = req.body;
-  if (data.password == "snooker123456" && data.username == "snooker28_admin") {
+  if (data.password == 'snooker123456' && data.username == 'snooker28_admin') {
     // 登录成功
-    settoken.setToken(data.username, data._id).then(data => {
+    settoken.setToken(data.username, data._id).then((data) => {
       return res.json({ code: 0, data: { accessToken: data } });
-    });
+    })
   } else {
     // 密码错误 登录失败
-    return res.json({ code: 2000, msg: "密码错误，登录失败" });
+    return res.json({ code: 2000, msg: '密码错误，登录失败' });
   }
 });
 
 router.get("/user/track", async (req, res, next) => {
   let data = req.query;
-  await TrackingManager.checkClearGain(data.uid);
+  await TrackingManager.checkClearGain(data.uid)
   let userInfo: any = await ModelUser.findOne({ uid: data.uid });
   if (!userInfo) {
-    await ModelUser.create({ uid: data.uid });
+    await ModelUser.create({ uid: data.uid })
   }
   res.send({
-    code: 0,
-    data: userInfo
+    code: 0, data: userInfo
   });
 });
 
@@ -41,30 +40,27 @@ router.post("/hall/check_in_game", async (req, res, next) => {
   let data = req.body;
   let gameId: any = await socketManager.checkInGame(data.uid);
   res.send({
-    code: 0,
-    data: { gameId }
+    code: 0, data: { gameId }
   });
 });
 router.post("/server/socket/test", async (req, res, next) => {
   let data = req.body;
   let conf: any = await SocketServer.sendMsg(data);
   res.send({
-    code: 0,
-    data: conf
+    code: 0, data: conf
   });
 });
 router.post("/room/update", async (req, res, next) => {
   let data = req.body;
   let conf: any = await ModelConfigRoom.updateOne({ id: data.id }, data);
   res.send({
-    code: 0,
-    data: conf
+    code: 0, data: conf
   });
 });
 router.get("/room/list", async (req, res, next) => {
   let data = req.query;
   let conf: any = await ModelConfigRoom.find({});
-  let listRes = [];
+  let listRes = []
   conf.forEach(e => {
     listRes.push({
       chipList: JSON.parse(e.chipList),
@@ -75,11 +71,10 @@ router.get("/room/list", async (req, res, next) => {
       min: e.min,
       max: e.max,
       count: socketManager.getCountByRoomLev(e.id)
-    });
+    })
   });
   res.send({
-    code: 0,
-    data: listRes
+    code: 0, data: listRes
   });
 });
 
@@ -97,8 +92,8 @@ router.get("/user/online/count", async (req, res, next) => {
 });
 router.post("/user/list", async (req, res, next) => {
   let { pageSize, page, userName } = req.body;
-  let list: any = await SocketServer.getUserList(pageSize, page, userName);
-  res.send({ code: 0, date: { list } });
+  let res1: any = await SocketServer.getUserList(pageSize, page, userName)
+  res.send({ code: 0, data: res1 });
 });
 
 router.post("/asset/rank", async (req, res, next) => {
@@ -107,13 +102,12 @@ router.post("/asset/rank", async (req, res, next) => {
     method: "GetAssetRank",
     args: [],
     kwargs: {
-      tag,
-      date,
-      timeType
+      tag, date, timeType
     }
   });
   res.send({ code: 0, data: data });
 });
+
 
 router.post("/user/toggleCheat", async (req, res, next) => {
   let { uid, flag } = req.body;
@@ -124,10 +118,11 @@ router.post("/user/toggleCheat", async (req, res, next) => {
 router.get("/avatar", async (req, res, next) => {
   let data = req.query;
   try {
+
     let result = (await SocketServer.getAvatar(data.uid)) as any;
     res.send({ code: 0, data: { src: result } });
   } catch (e) {
-    res.send({ code: 0, data: { src: "" } });
+    res.send({ code: 0, data: { src: '' } });
   }
 });
 

@@ -356,7 +356,7 @@ export default class SocketServer {
   static async getUserList(pageSize, page, userName) {
     if (!this.io) {
       let list = await ModelUser.find({});
-      return { total: list.length, page: 1, data: list };
+      return { total: list.length, page: 1, list: list };
     }
     let data = await this.sendMsg({
       method: "_GetUsersInfo",
