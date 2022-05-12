@@ -23,10 +23,10 @@ export default class socketManager {
     let num = 0;
     for (let uid in this.userSockets) {
       if (this.userSockets[uid]) {
-        num++
+        num++;
       }
     }
-    return num
+    return num;
   }
   static async getRoomCanJoin(level, roomId?) {
     let d = new Date().getTime();
@@ -35,13 +35,13 @@ export default class socketManager {
       return (
         !roomCtr.game.timeStart ||
         d < roomCtr.game.timeStart - 3000 ||
-        d > roomCtr.game.timeStart + 3000 &&
-        roomCtr.level == level &&
-        roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX
+        (d > roomCtr.game.timeStart + 3000 &&
+          roomCtr.level == level &&
+          roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX)
       );
     });
     if (!!roomId) {
-      list = list.filter(e => e.roomId != roomId)
+      list = list.filter(e => e.roomId != roomId);
     }
     if (list.length == 0) {
       let roomNew = new RoomManager({ level });
@@ -49,20 +49,24 @@ export default class socketManager {
       this.aliveRoomList.push(roomNew);
       return roomNew;
     } else {
-      let idx = Util.getRandomInt(0, list.length)
+      let idx = Util.getRandomInt(0, list.length);
       return list[idx];
     }
   }
   static removeRoom(room: RoomManager) {
-    this.aliveRoomList = this.aliveRoomList.filter((ctr: RoomManager) => ctr != room);
+    this.aliveRoomList = this.aliveRoomList.filter(
+      (ctr: RoomManager) => ctr != room
+    );
   }
   static getCountByRoomLev(lev: number) {
-    let roomList = this.aliveRoomList.filter((ctr: RoomManager) => ctr.level == lev);
-    let count = 0
+    let roomList = this.aliveRoomList.filter(
+      (ctr: RoomManager) => ctr.level == lev
+    );
+    let count = 0;
     roomList.forEach(e => {
-      count += e.uidList.length
-      console.log(e.uidList)
-    })
+      count += e.uidList.length;
+      console.log(e.uidList);
+    });
     return count;
   }
 
@@ -80,7 +84,7 @@ export default class socketManager {
         let res = JSON.stringify({
           type,
           data
-        })
+        });
         // let resBuffer = SocketServer.encode(res, false);
         // let res2 = SocketServer.decode(resBuffer,false)
         // console.log(res2,'发送消息！！！')
@@ -94,13 +98,12 @@ export default class socketManager {
     // let res = SocketServer.decode(Buffer.alloc(str.length, str), false)
     // console.log(res)
     if (!socketManager.isTest) {
-      await SocketServer.init()
+      await SocketServer.init();
     }
     this.listen();
-
   }
   static getInRoomByUid(uid) {
-    let ctrRoom = this.aliveRoomList.find(ctr => ctr.uidList.indexOf(uid) > -1)
+    let ctrRoom = this.aliveRoomList.find(ctr => ctr.uidList.indexOf(uid) > -1);
     return ctrRoom && ctrRoom.roomId;
   }
   static listen() {
@@ -113,12 +116,12 @@ export default class socketManager {
   }
   static checkInGame(uid) {
     let roomId = this.getInRoomByUid(uid);
-    let roomCtr = this.getRoomCtrByRoomId(roomId)
+    let roomCtr = this.getRoomCtrByRoomId(roomId);
     let roomInfo = roomCtr.getRoomInfo();
     if (roomInfo && roomInfo.isInRoom) {
-      return 1
+      return 1;
     } else {
-      return 0
+      return 0;
     }
   }
   static async onMessage(res, socket) {
@@ -139,11 +142,10 @@ export default class socketManager {
     }
     this.userSockets[uid] = socket;
 
-
     let roomId = this.getInRoomByUid(uid);
     let roomCtr = this.getRoomCtrByRoomId(roomId);
     if (roomCtr) {
-      roomCtr.doConnect(uid)
+      roomCtr.doConnect(uid);
     }
 
     switch (type) {
@@ -155,31 +157,34 @@ export default class socketManager {
       }
       case PROTOCLE.CLIENT.RECONNECT: {
         // 检测重连数据
-        let { session_key, client_id: sClient_id, uid } = data
+        let { session_key, client_id: sClient_id, uid } = data;
         let dataGame: any = {
           isMatch: data.isMatch
         };
-        console.log("data", data)
-        console.log('登录', session_key, sClient_id, uid)
+        console.log("data", data);
+        console.log("登录", session_key, sClient_id, uid);
         SocketServer.doLogin({
-          session_key, client_id: sClient_id, uid
-        }).then(async e => {
-          if (roomCtr) {
-            // 获取游戏数据并返回
-            dataGame = roomCtr.getRoomInfo();
-          }
-          let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-          if (!userInfo) {
-            return
-          }
-          this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
-            userInfo: userInfo,
-            dataGame
-          });
-
-        }).catch(e => {
-          console.log(`${uid}登录失败`)
+          session_key,
+          client_id: sClient_id,
+          uid
         })
+          .then(async e => {
+            if (roomCtr) {
+              // 获取游戏数据并返回
+              dataGame = roomCtr.getRoomInfo();
+            }
+            let userInfo = await SocketServer.getUserInfoAndFormat(uid);
+            if (!userInfo) {
+              return;
+            }
+            this.sendMsgByUidList([uid], PROTOCLE.SERVER.RECONNECT, {
+              userInfo: userInfo,
+              dataGame
+            });
+          })
+          .catch(e => {
+            console.log(`${uid}登录失败`);
+          });
 
         break;
       }
@@ -195,7 +200,7 @@ export default class socketManager {
           }
 
           let targetRoom: RoomManager;
-          let userInfo = await SocketServer.getUserInfoAndFormat(uid)
+          let userInfo = await SocketServer.getUserInfoAndFormat(uid);
           targetRoom = await this.getRoomCanJoin(level);
           targetRoom.join(userInfo);
         } else {
@@ -206,47 +211,49 @@ export default class socketManager {
         }
         break;
       }
-      case 'CHANGE_DESK': {
+      case "CHANGE_DESK": {
         if (!roomCtr) {
           return;
         }
         let { level, roomId } = data;
-        roomCtr.leave(uid, false);
-        let targetRoom: RoomManager;
-        let userInfo = await SocketServer.getUserInfoAndFormat(uid)
-        targetRoom = await this.getRoomCanJoin(level, roomId);
-        targetRoom.join(userInfo);
-        break
+        let flagLeave = roomCtr.leave(uid, false);
+        if (flagLeave != -1) {
+          let targetRoom: RoomManager;
+          let userInfo = await SocketServer.getUserInfoAndFormat(uid);
+          targetRoom = await this.getRoomCanJoin(level, roomId);
+          targetRoom.join(userInfo);
+        }
+        break;
       }
       case PROTOCLE.CLIENT.PING: {
         // 发回接收到的时间戳，计算ping
         this.sendMsgByUidList([uid], PROTOCLE.SERVER.PING, {
           timestamp: data.timestamp
         });
-        this.userPings[uid] = data.timestamp
+        this.userPings[uid] = data.timestamp;
         break;
       }
-      case 'ACTION': {
+      case "ACTION": {
         if (!roomCtr) {
           return;
         }
-        let { type, extraData } = data
-        roomCtr.doAction(uid, type, extraData)
-        break
+        let { type, extraData } = data;
+        roomCtr.doAction(uid, type, extraData);
+        break;
       }
-      case 'SHOW_BALLS': {
+      case "SHOW_BALLS": {
         if (!roomCtr) {
           return;
         }
-        roomCtr.showBalls(uid)
-        break
+        roomCtr.showBalls(uid);
+        break;
       }
-      case 'CHAT': {
+      case "CHAT": {
         if (!roomCtr) {
           return;
         }
-        roomCtr.showChat(uid, data.conf)
-        break
+        roomCtr.showChat(uid, data.conf);
+        break;
       }
     }
   }
@@ -254,35 +261,35 @@ export default class socketManager {
     let roomId = this.getInRoomByUid(uid);
     let roomCtr = this.getRoomCtrByRoomId(roomId);
     if (roomCtr) {
-      let res = roomCtr.leave(uid)
+      let res = roomCtr.leave(uid);
       if (res == -1) {
         return {
           code: -1,
-          msg: '游戏中，设为断线'
-        }
+          msg: "游戏中，设为断线"
+        };
       } else {
         return {
           code: 0,
-          msg: '踢出房间'
-        }
+          msg: "踢出房间"
+        };
       }
     } else {
       return {
         code: -1,
-        msg: '未在房间内，无法踢出'
-      }
+        msg: "未在房间内，无法踢出"
+      };
     }
   }
   static autoCheckDisConnected() {
     let t = new Date().getTime();
     for (let uid in this.userPings) {
       // 3s没有收到ping就判定为断开连接，强制触发一次重连
-      let tLast = this.userPings[uid]
+      let tLast = this.userPings[uid];
       if (tLast && t - tLast > 5000) {
         if (this.userSockets[uid]) {
-          console.log(`${uid}连接异常，5s未收到ping，服务器主动断开`)
+          console.log(`${uid}连接异常，5s未收到ping，服务器主动断开`);
           this.userSockets[uid].disconnect();
-          this.userPings[uid] = 0
+          this.userPings[uid] = 0;
         }
       }
     }
@@ -293,20 +300,20 @@ export default class socketManager {
       if (this.userSockets[uid] == socket) {
         // 踢出用户
         let roomId = this.getInRoomByUid(uid);
-        console.log(roomId, 'roomId')
+        console.log(roomId, "roomId");
         let roomCtr = this.getRoomCtrByRoomId(roomId);
         if (roomCtr) {
-          console.log('uid断开连接', uid)
+          console.log("uid断开连接", uid);
           roomCtr.leave(uid);
         }
-        this.userSockets[uid] = undefined
-        this.userPings[uid] = 0
+        this.userSockets[uid] = undefined;
+        this.userPings[uid] = 0;
       }
     }
   }
   static onConnect(socket) {
-    socket.on('disconnect', () => {
-      socketManager.onDisconnect(socket)
+    socket.on("disconnect", () => {
+      socketManager.onDisconnect(socket);
     });
     socket.on("message", res => {
       socketManager.onMessage(res, socket);
