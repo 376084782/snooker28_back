@@ -3,6 +3,7 @@ import ModelUser from "../models/ModelUser";
 import Util from "./Util";
 import { Socket as ss } from "net";
 import { setInterval } from "timers";
+import { socketHost, socketPort } from "./config";
 // 1 引入模块
 const net = require("net");
 const readline = require("readline");
@@ -42,11 +43,10 @@ export default class SocketServer {
         clearInterval(this.timer);
       }
       this.io = new net.Socket();
-      // 3 链接
-      this.io.connect({ port: 8888, host: "212.129.234.189" });
-      // this.io.connect({ port: 8884, host: "127.0.0.1" });
-
       this.io.setEncoding("utf8");
+      // 3 链接
+      this.io.connect({ port: socketPort, host: socketHost });
+
       this.io.on("ready", async () => {
         this.timer = setInterval(_ => {
           this.ConsumeRequest();

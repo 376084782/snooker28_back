@@ -126,12 +126,6 @@ router.get("/avatar", async (req, res, next) => {
   }
 });
 
-router.post("/userinfo", async (req, res, next) => {
-  let data = req.body;
-  let result = (await API.getUserInfo(data.uid)) as any;
-  res.send(result);
-});
-
 router.post("/getIsOpen", async (req, res, next) => {
   let data = req.body;
   res.send({ code: 0, data: socketManager.isOpen });

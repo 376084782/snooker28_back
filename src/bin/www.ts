@@ -7,15 +7,16 @@
 var app = require("../app");
 import socketManager from "../socket/index";
 import { doConnectMongo } from "../mongodb/db";
+import { portAjax, portWs } from "../socket/config";
 var debug = require("debug")("keke-saolei-node:server");
 var http = require("http");
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || "9020");
-console.log("ajax监听端口：", port);
-console.log("ws监听端口：", port + 1);
+var port = normalizePort(portAjax);
+console.log("ajax监听端口：", portAjax);
+console.log("ws监听端口：", portWs);
 app.set("port", port);
 
 /**
@@ -28,11 +29,11 @@ var server = http.createServer(app);
  * 创建socketio
  */
 const Server = require("socket.io");
-const io = new Server(port + 1, { origins: "*:*" });
+const io = new Server(portWs, { origins: "*:*" });
 
 doConnectMongo().then(e => {
   socketManager.init(io);
-})
+});
 
 /**
  * Listen on provided port, on all network interfaces.

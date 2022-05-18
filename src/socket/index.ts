@@ -12,7 +12,7 @@ function encode(str) {
   return base64;
 }
 export default class socketManager {
-  static isTest = true;
+  static isTest = false;
   static isOpen = true;
   static io;
   static userSockets = {};

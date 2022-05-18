@@ -3,6 +3,7 @@
 import * as mongoose from "mongoose";
 import socketManager from "../socket";
 import { createData } from "./data";
+import { DBHost, DBName, DBUser, DBPass } from "../socket/config";
 
 export const doConnectMongo = () => {
   return new Promise((rsv, rej) => {
@@ -13,10 +14,10 @@ export const doConnectMongo = () => {
         pass: "123456"
       });
     } else {
-      mongoose.connect("mongodb://127.0.0.1:27017/", {
-        dbName: "snooker28",
-        user: "root",
-        pass: "Test15259980589"
+      mongoose.connect(DBHost, {
+        dbName: DBName,
+        user: DBUser,
+        pass: DBPass
       });
     }
     const db = mongoose.connection;
