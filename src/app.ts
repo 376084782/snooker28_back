@@ -46,7 +46,7 @@ app.use(function (req, res, next) {
 });
 
 //验证token是否过期并规定哪些路由不用验证
-app.use(expressJwt.expressjwt({
+app.use(expressJwt({
 	secret: 'mes_qdhd_mobile_xhykjyxgs',
 	algorithms: ['HS256']
 }).unless({
