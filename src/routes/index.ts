@@ -93,11 +93,12 @@ router.get("/user/online/count", async (req, res, next) => {
 router.post("/user/list", async (req, res, next) => {
   let { pageSize, page, userName } = req.body;
   let list: any = await SocketServer.getUserList(pageSize, page, userName)
-  res.send({ code: 0, date: list });
+  res.send({ code: 0, data: list });
 });
 
 router.post("/asset/rank", async (req, res, next) => {
   let { tag, date, timeType } = req.body;
+  console.log(tag, date, timeType)
   let data = await SocketServer.sendMsg({
     method: "GetAssetRank",
     args: [],
