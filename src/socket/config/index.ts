@@ -12,7 +12,7 @@ export let TO = 2000;
 // 桌球主服务的地址
 export const socketHost = "212.129.234.189";
 // 桌球主服务的端口
-export const socketPort = 8884;
+export const socketPort = 8888;
 // 数据库地址
 export const DBHost = "mongodb://127.0.0.1:27017/";
 // 数据库名
