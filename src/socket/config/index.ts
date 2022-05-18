@@ -23,6 +23,6 @@ export const DBUser = "root";
 export const DBPass = "Test15259980589";
 
 // 本服务监听的ajax端口
-export const portAjax = 9620;
+export const portAjax = 9020;
 // 本服务监听的ws端口
-export const portWs = 9621;
+export const portWs = 9021;
