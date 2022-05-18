@@ -3,6 +3,7 @@ import ModelUser from "../models/ModelUser";
 import Util from "./Util";
 import { Socket as ss } from "net";
 import { setInterval } from "timers";
+import { socketHost, socketPort } from "./config";
 // 1 引入模块
 const net = require("net");
 const readline = require("readline");
@@ -14,43 +15,42 @@ interface DataServer {
   call?: Function;
 }
 interface Req {
-  data?: Buffer,
-  callName?: string,
-  rsv?: any,
-  rej?: any,
-  sendTime?: number,
+  data?: Buffer;
+  callName?: string;
+  rsv?: any;
+  rej?: any;
+  sendTime?: number;
 }
 export default class SocketServer {
   static io: ss;
 
-  static cwnd = 32
-  static cwndMax = 32
-  static waitQueue: Array<Req> = []
-  static RTTThresh = 200
-  static retryTimes = 10
-  static timer: NodeJS.Timeout
+  static cwnd = 32;
+  static cwndMax = 32;
+  static waitQueue: Array<Req> = [];
+  static RTTThresh = 200;
+  static retryTimes = 10;
+  static timer: NodeJS.Timeout;
   static init() {
     if (this.retryTimes <= 0) {
-      console.error("服务器连接失败")
+      console.error("服务器连接失败");
       throw new Error("服务器连接失败");
     }
-    this.retryTimes --
+    this.retryTimes--;
     return new Promise(rsv => {
       // rsv(null)
       // return;
       if (this.timer) {
-        clearInterval(this.timer)
+        clearInterval(this.timer);
       }
       this.io = new net.Socket();
-      // 3 链接
-      this.io.connect({ port: 8888, host: "212.129.234.189" });
-      // this.io.connect({ port: 8884, host: "127.0.0.1" });
-
       this.io.setEncoding("utf8");
+      // 3 链接
+      this.io.connect({ port: socketPort, host: socketHost });
+
       this.io.on("ready", async () => {
         this.timer = setInterval(_ => {
-          this.ConsumeRequest()
-        }, 100)
+          this.ConsumeRequest();
+        }, 100);
         setInterval(e => {
           this.doHeart();
         }, 5000);
@@ -69,40 +69,42 @@ export default class SocketServer {
   static listen() {
     this.io.on("connect", chunk => {
       console.log("SocketServer连接成功");
-      this.retryTimes = 10
+      this.retryTimes = 10;
       this.sendMsg({
-        method: 'RegisterService', kwargs: { name: 'Snooker28' }
-      })
+        method: "RegisterService",
+        kwargs: { name: "Snooker28" }
+      });
     });
     this.io.on("data", chunk => {
       let buffer = Buffer.alloc(chunk.length, chunk);
-      this.bufferCache = Buffer.concat([this.bufferCache, buffer],
-        this.bufferCache.length + buffer.length)
+      this.bufferCache = Buffer.concat(
+        [this.bufferCache, buffer],
+        this.bufferCache.length + buffer.length
+      );
       while (this.doCheckData()) {
-        console.log('========数据包长度足够，解包========')
+        console.log("========数据包长度足够，解包========");
       }
-      console.log('========单次解包完成========')
+      console.log("========单次解包完成========");
     });
     this.io.on("error", e => {
       console.log("SocketServer连接出错", e);
       setTimeout(() => {
-        this.init()
+        this.init();
       }, 1000);
     });
-    this.io.on("drain", e => {
-    });
+    this.io.on("drain", e => {});
     this.io.on("close", e => {
-      console.log("SocketServer关闭, 尝试重连",e);
+      console.log("SocketServer关闭, 尝试重连", e);
       setTimeout(() => {
-        this.init()
+        this.init();
       }, 1000);
     });
   }
   static bufferCache: Buffer = Buffer.alloc(0);
-  static waitingLen: number = 0
+  static waitingLen: number = 0;
   static doCheckData() {
     if (this.bufferCache.length <= 8) {
-      return false
+      return false;
     }
     let bufferLen = Buffer.from(this.bufferCache.slice(0, 8).toString());
     // 得到两个byte数组
@@ -112,17 +114,20 @@ export default class SocketServer {
       bufferLen[i] ^= bufferSecret[i % bufferSecret.length];
     }
     let len = +bufferLen.toString() - 4;
-    let bufferData = this.bufferCache.slice(8, this.bufferCache.length)
-    console.log(len, bufferData.length, '长度')
+    let bufferData = this.bufferCache.slice(8, this.bufferCache.length);
+    console.log(len, bufferData.length, "长度");
     if (bufferData.length >= len) {
       // 数据包长度足够
-      console.log('数据包长度足够')
+      console.log("数据包长度足够");
       this.getMsg(this.bufferCache.slice(0, len + 8));
       // 解码后清空缓存的长度和数据
-      this.bufferCache = this.bufferCache.slice(len + 8, this.bufferCache.length);
-      return true
+      this.bufferCache = this.bufferCache.slice(
+        len + 8,
+        this.bufferCache.length
+      );
+      return true;
     } else {
-      return false
+      return false;
     }
   }
   static getBytesLength(str) {
@@ -187,42 +192,49 @@ export default class SocketServer {
       return {};
     }
   }
-  static timeMap: Map<string, Req> = new Map()
+  static timeMap: Map<string, Req> = new Map();
   static callMap = {};
   static sendMsg(data: DataServer) {
     return new Promise((rsv, rej) => {
       if (!this.io) {
-        rsv({ code: -1 })
-        return
+        rsv({ code: -1 });
+        return;
       }
       let callId = Util.getUniqId();
       let callName = `snooker28_${callId}`;
 
       data.kwargs["callback"] = callName;
-      let temp = this.encode(data)
+      let temp = this.encode(data);
       // if (data.method != "_heartbeat") {
       //   console.log(`请求SocketServer`, data,);
       // }
-      this.trySend(callName, temp, rsv, rej)
+      this.trySend(callName, temp, rsv, rej);
     });
   }
   static trySend(callName: string, data: Buffer, rsv, rej) {
     if (this.timeMap.size < this.cwnd) {
       // 小于窗口大小可以添加并发送
-      let success = false
+      let success = false;
       try {
-        success = this.io.write(data)
-      } catch {
-
-      }
+        success = this.io.write(data);
+      } catch {}
       if (!success) {
-        console.log("写进缓冲区失败，加入等待队列重新发送", callName)
-        this.waitQueue.unshift({callName: callName, data: data, rej: rej, rsv: rsv})
-        return
+        console.log("写进缓冲区失败，加入等待队列重新发送", callName);
+        this.waitQueue.unshift({
+          callName: callName,
+          data: data,
+          rej: rej,
+          rsv: rsv
+        });
+        return;
       }
       this.timeMap.set(callName, {
-        callName: callName, data: data, rsv: rsv, rej: rej, sendTime: new Date().getTime()
-      })
+        callName: callName,
+        data: data,
+        rsv: rsv,
+        rej: rej,
+        sendTime: new Date().getTime()
+      });
       this.callMap[callName] = e => {
         if (e.code == 0) {
           rsv(e.data || e);
@@ -232,13 +244,17 @@ export default class SocketServer {
         this.callMap[callName] = [];
         delete this.callMap[callName];
       };
-      console.log("CALLBAK", callName)
+      console.log("CALLBAK", callName);
     } else {
       // 否则添加到等待队列中
-      console.log("发送队列已满，进入等待队列", callName)
-      this.waitQueue.push({callName: callName, data: data, rej: rej, rsv: rsv})
+      console.log("发送队列已满，进入等待队列", callName);
+      this.waitQueue.push({
+        callName: callName,
+        data: data,
+        rej: rej,
+        rsv: rsv
+      });
     }
-
   }
   static doLogin(data) {
     return this.sendMsg({
@@ -299,7 +315,6 @@ export default class SocketServer {
         // 玩家头像
         avatar: data.avatar
       };
-
     }
   }
   static async getUserInfo(uid) {
@@ -339,6 +354,10 @@ export default class SocketServer {
     return data;
   }
   static async getUserList(pageSize, page, userName) {
+    if (!this.io) {
+      let list = await ModelUser.find({});
+      return { total: list.length, page: 1, data: list };
+    }
     let data = await this.sendMsg({
       method: "_GetUsersInfo",
       args: [],
@@ -353,28 +372,33 @@ export default class SocketServer {
 
   static ConsumeRequest() {
     // 定时发送
-    let timeNow = new Date().getTime()
+    let timeNow = new Date().getTime();
     for (const key in this.timeMap) {
       if (timeNow - this.timeMap.get(key).sendTime > 15000) {
-        let req = this.timeMap.get(key)
-        console.log("TIMEOUT: 超时了", req.callName)
+        let req = this.timeMap.get(key);
+        console.log("TIMEOUT: 超时了", req.callName);
         // 重新加入发送队列的首部，直到收到回复为止，如果服务端已经处理过了会忽略并返回通知
         // 这里需要注意重连重发的情况，服务端会重复处理
         // TODO: 如果遇到了吞金币或其他情况请检查这里
-        this.trySend(req.callName, req.data, req.rsv, req.rej)
+        this.trySend(req.callName, req.data, req.rsv, req.rej);
       }
     }
     if (this.waitQueue.length || this.timeMap.size)
-      console.log("等待队列", this.waitQueue.length, "发送队列", this.timeMap.size)
+      console.log(
+        "等待队列",
+        this.waitQueue.length,
+        "发送队列",
+        this.timeMap.size
+      );
     if (this.timeMap.size == 1) {
-      console.log(this.timeMap.keys())
+      console.log(this.timeMap.keys());
     }
     if (this.waitQueue.length) {
       while (this.waitQueue.length > 0 && this.timeMap.size < this.cwnd) {
         // 等待队列长度大于0且发送队列小于窗口大小
-        let req = this.waitQueue.shift()
-        console.log("重新进入发送队列", req.callName)
-        this.trySend(req.callName, req.data, req.rsv, req.rej)
+        let req = this.waitQueue.shift();
+        console.log("重新进入发送队列", req.callName);
+        this.trySend(req.callName, req.data, req.rsv, req.rej);
       }
     }
   }
@@ -383,42 +407,43 @@ export default class SocketServer {
     try {
       let res: any = this.decode(msg);
       if (!this.timeMap.has(res.method)) {
-        console.log("METHOD_NOT_EXIST", res.method)
-        return
+        console.log("METHOD_NOT_EXIST", res.method);
+        return;
       }
-      let timeNow = new Date().getTime()
-      let rtt = timeNow - this.timeMap.get(res.method).sendTime
-      console.log("返回", rtt, res.method)
+      let timeNow = new Date().getTime();
+      let rtt = timeNow - this.timeMap.get(res.method).sendTime;
+      console.log("返回", rtt, res.method);
       if (rtt > this.RTTThresh) {
         // 拥塞控制
-        this.cwnd = Math.max(Math.floor(this.cwnd / 2), 1)
-        console.log("网络拥塞，触发拥塞控制，cwnd=", this.cwnd)
+        this.cwnd = Math.max(Math.floor(this.cwnd / 2), 1);
+        console.log("网络拥塞，触发拥塞控制，cwnd=", this.cwnd);
       } else {
         // 恢复大小，但是不能超过max
-        this.cwnd = Math.min(this.cwnd + 1, this.cwndMax)
+        this.cwnd = Math.min(this.cwnd + 1, this.cwndMax);
       }
-      this.timeMap.delete(res.method)
+      this.timeMap.delete(res.method);
 
       // console.log(`SocketServer返回,耗时${new Date().getTime() - timeStart}`, res);
       if (res.method) {
         let func = this.callMap[res.method];
         let data = res.kwargs;
         func && func(data);
-        if (res.method == '_CheckUserInH5Game') {
+        if (res.method == "_CheckUserInH5Game") {
           let { uid, client_id } = data;
           let roomId = socketManager.getInRoomByUid(uid);
           // 查询玩家是否在游戏中
           this.sendMsg({
-            method: data.callback, kwargs: { name: roomId ? 'Snooker28' : '' }
-          })
+            method: data.callback,
+            kwargs: { name: roomId ? "Snooker28" : "" }
+          });
         }
       } else {
       }
     } catch (e) {
-      console.log("GETMSG_ERROR", e)
+      console.log("GETMSG_ERROR", e);
     }
   }
-  static async onMessage(res, socket) { }
-  static onDisconnect(socket) { }
-  static onConnect(socket) { }
+  static async onMessage(res, socket) {}
+  static onDisconnect(socket) {}
+  static onConnect(socket) {}
 }

@@ -94,13 +94,17 @@ export default class RoomManager {
 
   }
   // 玩家离开
-  leave(uid) {
+  leave(uid, withMsg = true) {
     if (this.step > 0 && this.step != 2) {
-      this.userDisconnectInGame(uid)
-      return -1;
+      if (this.userListInGame.findIndex(e => e.uid == uid) > -1) {
+        this.userDisconnectInGame(uid)
+        return -1;
+      }
     }
     clearTimeout(this.timerJoin[uid]);
-    socketManager.sendMsgByUidList([uid], PROTOCLE.SERVER.GO_HALL, {});
+    if (withMsg) {
+      socketManager.sendMsgByUidList([uid], PROTOCLE.SERVER.GO_HALL, {});
+    }
     this.userList = this.userList.filter(user => user.uid != uid);
     socketManager.sendMsgByUidList(
       this.uidList,
@@ -478,7 +482,7 @@ export default class RoomManager {
           // B球多 B大
           return 1;
         } else if (b.ballList.length == a.ballList.length) {
-          // 一样多的球 第一个球谁大就谁大
+          // 一样多的球 公开球最大谁大就谁赢
           let maxB = Math.max(...b.ballList.slice(1, b.ballList.length));
           let maxA = Math.max(...a.ballList.slice(1, a.ballList.length));
           return maxB > maxA ? 1 : -1;
@@ -496,7 +500,7 @@ export default class RoomManager {
           if (b.ballList.length > a.ballList.length) {
             return 1;
           } else if (b.ballList.length == a.ballList.length) {
-            // 一样多的球 第一个球谁大就谁大
+            // 一样多的球 公开球最大谁大就谁赢
             let maxB = Math.max(...b.ballList.slice(1, b.ballList.length));
             let maxA = Math.max(...a.ballList.slice(1, a.ballList.length));
             return maxB > maxA ? 1 : -1;
@@ -752,6 +756,7 @@ export default class RoomManager {
     let info: any = {
       isInRoom: true,
       gameInfo: {
+        roomId: this.roomId,
         config: this.config,
         step: this.step,
         level: this.level,
