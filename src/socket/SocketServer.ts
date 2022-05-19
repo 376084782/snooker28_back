@@ -27,7 +27,7 @@ export default class SocketServer {
   static cwnd = 32;
   static cwndMax = 32;
   static waitQueue: Array<Req> = [];
-  static RTTThresh = 200;
+  static RTTThresh = 250;
   static retryTimes = 10;
   static timer: NodeJS.Timeout;
   static init() {
