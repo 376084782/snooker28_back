@@ -369,6 +369,34 @@ export default class SocketServer {
     });
     return data;
   }
+ static async doBanIp(ip: string, flag) {
+    let data = await this.sendMsg({
+     method: flag ? "BanIp" : 'UnBanIp',
+     args: [],
+     kwargs: {
+      ip
+     }
+    });
+    return data;
+  
+   }
+   static async GetAssetRank({ tag, startDate, endDate, page, pageSize }) {
+    let data = await this.sendMsg({
+     method: "GetAssetRank",
+     args: [],
+     kwargs: {
+      "mode": 1, //时间类型，默认为0, 则tags为内置定义类型，为1则可以自定义tag统计方案
+      tag, //mode为1时填写为数组[0, 1000], mode为0时填写字符串，标签key值
+      "timeType": "custom", //hours, days, months, years, custom, 为"custom"时需要自定义startDate和endDate
+      // "date": "2022-04-11 14:30:00",// 2022 - 04 - 11 14: 30: 00 timeType不为"custom"时填写, 默认值为当前时间
+      startDate,// timeType为"custom"时填写
+      endDate,// timeType为"custom"时填写
+      page, //默认分页数为1，
+      pageSize, //默认每页200条数据
+     }
+    });
+    return data;
+   }
 
   static ConsumeRequest() {
     // 定时发送

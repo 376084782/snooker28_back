@@ -96,18 +96,17 @@ router.post("/user/list", async (req, res, next) => {
   res.send({ code: 0, data: list });
 });
 
-router.post("/asset/rank", async (req, res, next) => {
-  let { tag, date, timeType } = req.body;
-  console.log(tag, date, timeType)
-  let data = await SocketServer.sendMsg({
-    method: "GetAssetRank",
-    args: [],
-    kwargs: {
-      tag, date, timeType
-    }
+router.post("/ip/ban", async (req, res, next) => {
+   let { ip, flag } = req.body;
+   let dd: any = await SocketServer.doBanIp(ip, flag);
+   res.send({ code: 0, date: dd });
   });
-  res.send({ code: 0, data: data });
-});
+  
+  router.post("/asset/rank", async (req, res, next) => {
+   let { tag, startDate, endDate, page, pageSize } = req.body;
+   let list: any = await SocketServer.GetAssetRank(req.body);
+   res.send({ code: 0, date: list });
+  });
 
 
 router.post("/user/toggleCheat", async (req, res, next) => {
