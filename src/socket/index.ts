@@ -33,11 +33,11 @@ export default class socketManager {
     // 检查当前已存在的房间中 公开的，人未满的,未开始游戏的
     let list = this.aliveRoomList.filter((roomCtr: RoomManager) => {
       return (
-        !roomCtr.game.timeStart ||
-        d < roomCtr.game.timeStart - 3000 ||
-        (d > roomCtr.game.timeStart + 3000 &&
-          roomCtr.level == level &&
-          roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX)
+        roomCtr.level == level &&
+        (!roomCtr.game.timeStart ||
+          d < roomCtr.game.timeStart - 3000 ||
+          (d > roomCtr.game.timeStart + 3000 &&
+            roomCtr.uidList.length < PEOPLE_EACH_GAME_MAX))
       );
     });
     if (!!roomId) {

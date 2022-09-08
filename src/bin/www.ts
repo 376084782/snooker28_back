@@ -5,11 +5,17 @@
  */
 "use strict";
 var app = require("../app");
+
 import socketManager from "../socket/index";
 import { doConnectMongo } from "../mongodb/db";
 import { portAjax, portWs } from "../socket/config";
+import ConfigReader from "../config/ConfigReader";
+
 var debug = require("debug")("keke-saolei-node:server");
 var http = require("http");
+
+
+
 /**
  * Get port from environment and store in Express.
  */
@@ -18,6 +24,8 @@ var port = normalizePort(portAjax);
 console.log("ajax监听端口：", portAjax);
 console.log("ws监听端口：", portWs);
 app.set("port", port);
+
+
 
 /**
  * Create HTTP server.

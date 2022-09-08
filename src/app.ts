@@ -46,13 +46,13 @@ app.use(function (req, res, next) {
 });
 
 //验证token是否过期并规定哪些路由不用验证
-app.use(expressJwt({
+let func = expressJwt.expressjwt || expressJwt;
+app.use(func({
 	secret: 'mes_qdhd_mobile_xhykjyxgs',
 	algorithms: ['HS256']
 }).unless({
 	path: ['/login', '/room/list', '/avatar']//除了这个地址，其他的URL都需要验证
 }))
-
 
 
 // view engine setup
