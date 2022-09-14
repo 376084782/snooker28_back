@@ -196,7 +196,9 @@ export default class SocketServer {
   static timeMap: Map<string, Req> = new Map();
   static callMap = {};
   static sendMsg(data: DataServer) {
-    console.log('发送数据',data)
+    if (data.method != '_heartbeat') {
+      console.log('发送数据', data)
+    }
     return new Promise((rsv, rej) => {
       if (!this.io) {
         rsv({ code: -1 });
@@ -360,7 +362,6 @@ export default class SocketServer {
       let list = await ModelUser.find({});
       return { total: list.length, page: 1, data: list };
     }
-    console.log('111111111111')
     let data = await this.sendMsg({
       method: "_GetUsersInfo",
       args: [],
@@ -370,7 +371,7 @@ export default class SocketServer {
         userName
       }
     });
-    console.log(data,'ddddddddd')
+    console.log(data, 'ddddddddd')
     return data;
   }
   static async doBanIp(ip: string, flag) {
@@ -383,6 +384,17 @@ export default class SocketServer {
     });
     return data;
 
+  }
+  static async GetAssetRankList({
+    tag, date, timeType }) {
+    let data = await this.sendMsg({
+      method: "GetAssetRank",
+      args: [],
+      kwargs: {
+        tag, date, timeType
+      }
+    });
+    return data;
   }
   static async GetAssetRank({ tag, startDate, endDate, page, pageSize }) {
     let data = await this.sendMsg({
@@ -422,9 +434,9 @@ export default class SocketServer {
       //   "发送队列",
       //   this.timeMap.size
       // );
-    if (this.timeMap.size == 1) {
-      console.log(this.timeMap.keys());
-    }
+      if (this.timeMap.size == 1) {
+        console.log(this.timeMap.keys());
+      }
     if (this.waitQueue.length) {
       while (this.waitQueue.length > 0 && this.timeMap.size < this.cwnd) {
         // 等待队列长度大于0且发送队列小于窗口大小
@@ -438,6 +450,7 @@ export default class SocketServer {
   static getMsg(msg: Buffer) {
     try {
       let res: any = this.decode(msg);
+      console.log("返回", JSON.stringify(res));
       if (!this.timeMap.has(res.method)) {
         console.log("METHOD_NOT_EXIST", res.method);
         return;

@@ -113,9 +113,14 @@ router.post("/ip/ban", async (req, res, next) => {
   res.send({ code: 0, date: dd });
 });
 
-router.post("/asset/rank", async (req, res, next) => {
+router.post("/asset/rank/total", async (req, res, next) => {
   let { tag, startDate, endDate, page, pageSize } = req.body;
   let list: any = await SocketServer.GetAssetRank(req.body);
+  res.send({ code: 0, date: list });
+});
+router.post("/asset/rank", async (req, res, next) => {
+  let { tag, startDate, endDate, page, pageSize } = req.body;
+  let list: any = await SocketServer.GetAssetRankList(req.body);
   res.send({ code: 0, date: list });
 });
 
