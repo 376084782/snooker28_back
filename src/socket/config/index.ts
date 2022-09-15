@@ -15,14 +15,14 @@ export const socketHost = "101.34.81.154";
 export const socketPort = 8888;
 // 数据库地址
 // export const DBHost = "mongodb://127.0.0.1:27017/";
-export const DBHost = "mongodb://39.101.162.107:20017/";
+export const DBHost = "mongodb://101.34.81.154:27017/";
 // 数据库名
 export const DBName = "snooker28";
 // 数据库用户名
 export const DBUser = "root";
 // 数据库密码
-// export const DBPass = "Test15259980589";
-export const DBPass = "123456";
+export const DBPass = "Test15259980589";
+// export const DBPass = "123456";
 
 // 本服务监听的ajax端口
 export const portAjax = 9020;
