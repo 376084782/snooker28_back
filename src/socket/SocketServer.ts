@@ -374,6 +374,16 @@ export default class SocketServer {
     console.log(data, 'ddddddddd')
     return data;
   }
+  static async getBanList() {
+    let data = await this.sendMsg({
+      method: 'GetBlacklist',
+      args: [],
+      kwargs: {
+      }
+    });
+    return data;
+
+  }
   static async doBanIp(ip: string, flag) {
     let data = await this.sendMsg({
       method: flag ? "BanIp" : 'UnBanIp',

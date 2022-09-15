@@ -107,10 +107,15 @@ router.post("/user/list", async (req, res, next) => {
   res.send({ code: 0, data: list });
 });
 
+router.post("/ban/list", async (req, res, next) => {
+  let { ip, flag } = req.body;
+  let dd: any = await SocketServer.getBanList();
+  res.send({ code: 0, data: dd });
+});
 router.post("/ip/ban", async (req, res, next) => {
   let { ip, flag } = req.body;
   let dd: any = await SocketServer.doBanIp(ip, flag);
-  res.send({ code: 0, date: dd });
+  res.send({ code: 0, data: dd });
 });
 
 router.post("/asset/rank/total", async (req, res, next) => {
