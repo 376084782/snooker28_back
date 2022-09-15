@@ -25,8 +25,8 @@ export const DBPass = "Test15259980589";
 // export const DBPass = "123456";
 
 // 本服务监听的ajax端口
-export const portAjax = 9020;
+export const portAjax = 9301;
 // 本服务监听的ws端口
-export const portWs = 9021;
+export const portWs = 9302;
 
 
