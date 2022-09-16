@@ -28,5 +28,3 @@ export const DBPass = "Test15259980589";
 export const portAjax = 9301;
 // 本服务监听的ws端口
 export const portWs = 9302;
-
-
